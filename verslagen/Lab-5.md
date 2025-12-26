@@ -274,3 +274,4 @@ Tue 2025-12-23 09:51:12 UTC 4min 54s left Tue 2025-12-23 09:46:12 UTC 5s ago    
 
 Borg compact verwijdert onnodige data uit de repository om ruimte te besparen.
 
+
