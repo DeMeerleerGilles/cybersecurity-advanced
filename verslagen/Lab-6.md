@@ -209,7 +209,155 @@ sudo nginx -t
 sudo rc-service nginx reload
 ```
 
+Ik paste nog de record voor het domein aan van de webserver naar het ip adres van de isprouter in de bind configuratie op de dns server:
 
+sudo vi /var/bind/cybersec.internal
+
+```conf
+dns     IN A    172.30.0.4
+www     IN A    192.168.62.254
+services  IN A    192.168.62.254
+```
+
+Na een dig test zien we dat alles correct is ingesteld:
+
+```bash
+┌──(vagrant㉿red)-[~]
+└─$ dig dig www.cybersec.internal
+
+
+; <<>> DiG 9.20.11-4+b1-Debian <<>> dig www.cybersec.internal
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 9695
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 7eaa9c64e9a18b7601000000694eb3a0d3ee4840ab1f1879 (good)
+;; QUESTION SECTION:
+;dig.                           IN      A
+
+;; Query time: 3 msec
+;; SERVER: 172.30.20.4#53(172.30.20.4) (UDP)
+;; WHEN: Fri Dec 26 11:11:09 EST 2025
+;; MSG SIZE  rcvd: 60
+
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 64171
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 7eaa9c64e9a18b7601000000694eb3a0d3ee4840ab1f1879 (good)
+;; QUESTION SECTION:
+;www.cybersec.internal.         IN      A
+
+;; ANSWER SECTION:
+www.cybersec.internal.  86400   IN      A       192.168.62.254
+
+;; Query time: 0 msec
+;; SERVER: 172.30.20.4#53(172.30.20.4) (UDP)
+;; WHEN: Fri Dec 26 11:11:09 EST 2025
+;; MSG SIZE  rcvd: 94
+```
+
+Hierna kopieerde ik de certificaten en sleutels naar de juiste locaties op de isprouter:
+
+```bash
+sudo mkdir -p /etc/ssl/certs
+sudo mkdir -p /etc/ssl/private
+```
+
+```bash
+isprouter:~$ sudo cp ~/webserver.crt /etc/ssl/certs/
+sudo cp ~/webserver.key /etc/ssl/private/
+```
+
+```bash
+isprouter:~$ sudo chown root:root /etc/ssl/certs/webserver.crt /etc/ssl/private/webserver.key
+sudo chmod 644 /etc/ssl/certs/webserver.crt
+sudo chmod 600 /etc/ssl/private/webserver.key
+```
+
+Op de isp router moest ik ook nog het verkeer toestaan in de firewall:
+
+```bash
+sudo nft add rule inet filter input tcp dport 443 accept
+sudo nft add rule inet filter input tcp dport 80 accept
+```
+
+Hierna is de website bereikbaar via HTTPS:
+
+![alt text](<img/Schermafbeelding 2025-12-26 173416.png>)
+
+CA trusten op de kali machine:
+
+Om de CA te trusten op de kali machine, kopieerde ik het ca.crt bestand naar de kali machine en voegde ik het toe aan de vertrouwde certificaten:
+
+```bash
+sudo cp ca.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates
+```
+
+We zien nu een mooi slotje in de browser:
+
+![alt text](<img/Schermafbeelding 2025-12-26 175349.png>)
+
+## Wireshark capture
+
+Om het verkeer met wireshark te bekijken hebben we nood aan de private key van de webserver. We importeren deze in wireshark.
+
+In wireshark kreeg ik echten geen HTTP verkeer te zien door de Extended Master Secret (EMS) extensie verhindert passieve decryptie met enkel de private key. 
+
+![alt text](<img/Schermafbeelding 2025-12-26 180703.png>)
+
+## HTTPS TLS 1.3
+
+Om TLS 1.3 te configureren, maakte ik een nieuw configuratiebestand aan:
+
+```bash
+sudo vi /etc/nginx/http.d/ssl-tls13.conf
+```
+
+Met de volgende inhoud:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name www.cybersec.internal;
+
+    ssl_certificate     /etc/ssl/certs/webserver.crt;
+    ssl_certificate_key /etc/ssl/private/webserver.key;
+
+    ssl_protocols TLSv1.3;
+    ssl_ciphers TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256;
+    ssl_prefer_server_ciphers on;
+
+
+    location / {
+        proxy_pass http://172.30.10.10:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+server {
+    listen 80;
+    server_name www.cybersec.internal;
+    return 301 https://$host$request_uri;
+}
+
+```
+
+We testten de configuratie en herlaadden nginx:
+
+```bash
+sudo nginx -t
+sudo rc-service nginx reload
+```
+
+TODO : screenshot van TLS 1.3 in browser & wireshark
 
 ## Vragen bij het labo:
 

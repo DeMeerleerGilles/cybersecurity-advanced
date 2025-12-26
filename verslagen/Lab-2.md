@@ -320,33 +320,36 @@ table inet filter {
         ip saddr 192.168.62.110 tcp dport 22 accept
     }
 
-        chain forward {
-    type filter hook forward priority 0; policy drop;
+    chain forward {
+        type filter hook forward priority 0; policy drop;
 
-    #  Sta bestaande connecties toe
-    ct state { established, related } accept
+        # Allow established connections
+        ct state { established, related } accept
 
-    #  LAN → WAN
-    iifname $INTERNAL oifname $WAN accept
+        # LAN → WAN
+        iifname $INTERNAL oifname $WAN accept
 
-    # LAN ↔ DMZ
-    ip saddr $intranet_net ip daddr $dmz_net accept
+        # LAN ↔ DMZ
+        ip saddr $intranet_net ip daddr $dmz_net accept
+        ip saddr $dmz_net ip daddr $intranet_net accept
 
-    # Fake internet → DMZ webserver
-    ip saddr $fake_internet ip daddr $dmz_net tcp dport 80 accept
-    ip saddr $fake_internet ip daddr $dmz_net icmp type echo-request accept
+        # Fake internet → DMZ webserver
+        ip saddr $fake_internet ip daddr $dmz_net tcp dport {80,443} accept
+        ip saddr $fake_internet ip daddr $dmz_net icmp type echo-request accept
 
-    # Fake internet → Internal DNS
-    ip saddr $fake_internet ip daddr $intranet_net udp dport 53 accept
-    ip saddr $fake_internet ip daddr $intranet_net tcp dport 53 accept
+        # Fake internet → Internal DNS
+        ip saddr $fake_internet ip daddr $intranet_net udp dport 53 accept
+        ip saddr $fake_internet ip daddr $intranet_net tcp dport 53 accept
 
-    #  Laat ook terugverkeer van DMZ naar fake internet door
-    ip saddr $dmz_net ip daddr $fake_internet accept
-    #  Drop al de rest
-    ip saddr $fake_internet drop
-}
+        # Fake internet → DMZ optional services (Flask / Java)
+        ip saddr $fake_internet ip daddr $dmz_net tcp dport {8000,9200} accept
 
+        # Allow return traffic
+        ip saddr $dmz_net ip daddr $fake_internet accept
 
+        # Drop all other fake internet traffic
+        ip saddr $fake_internet drop
+    }
 
     chain output {
         type filter hook output priority 0; policy accept;
@@ -366,6 +369,9 @@ table ip nat {
 
         # Masquerade all traffic going to WAN
         oifname $WAN ip saddr { $intranet_net, $dmz_net } masquerade
+
+        # Masquerade fake_internet → DMZ
+        oifname $INTERNAL ip saddr $fake_internet ip daddr $dmz_net masquerade
     }
 }
 EOF
