@@ -516,3 +516,9 @@ Can you easily retrieve your certificates after adding them?
 Ja, nadat de certificaten zijn toegevoegd, kunnen ze gemakkelijk worden opgehaald via de certificaatbeheerder van het os of de browser.
 
 Can you review and explain all the files from the OpenVPN lab (see later on in this course) and what they represent? CA? Keys? Certificates?
+
+Ja, in het OpenVPN-labo zijn er verschillende bestanden die elk een specifieke rol spelen:
+- ca.crt: Dit is het certificaat van de Certificate Authority (CA) die wordt gebruikt om de identiteit van de VPN-server en -client te verifiëren.
+- server.crt: Dit is het certificaat van de VPN-server, ondertekend door de CA.
+- server.key: Dit is de private key van de VPN-server, die geheim moet worden gehouden.
+- client.crt: Dit is het certificaat van de VPN-client, ondertekend door de CA.
