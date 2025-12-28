@@ -1,0 +1,37 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Netwerkconfiguratie
+  NETWORK_NAME = "internalnet"
+  WAZUH_IP     = "172.30.20.50"
+
+  # Wazuh-server (AlmaLinux 9)
+  config.vm.define "wazuh-server" do |wazuh|
+    wazuh.vm.box = "almalinux/9"
+    wazuh.vm.hostname = "wazuh-server"
+    wazuh.vm.network "private_network", ip: WAZUH_IP
+
+    # Optioneel: meer resources
+    wazuh.vm.provider "virtualbox" do |vb|
+      vb.memory = "4096"
+      vb.cpus = 2
+    end
+
+    # Provisioning: install dependencies + Wazuh
+    wazuh.vm.provision "shell", inline: <<-SHELL
+      sudo dnf update -y
+      sudo dnf install curl wget unzip -y
+
+      IFACE=$(ip route | awk '/default/ {print $5}')
+
+      sudo nmcli connection modify $IFACE +ipv4.routes "192.168.62.0/24 172.30.255.254"
+      sudo nmcli connection up $IFACE
+
+      # Wazuh 4.9 installatie script
+      curl -sO https://packages.wazuh.com/4.9/wazuh-install.sh
+      sudo bash wazuh-install.sh -a
+
+    SHELL
+  end
+end
