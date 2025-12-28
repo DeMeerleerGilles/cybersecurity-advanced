@@ -18,3 +18,14 @@ IP-adressen per toestel:
 | companyrouter | 172.30.255.254 |
 | homerouter    | 192.168.62.42  |
 | kali          | 192.168.62.110 |
+
+Routes die moeten ingesteld worden:
+
+Alles in .20.X krijgt route
+
+sudo ip route add 192.168.62.0/24 via 172.30.255.254 dev eth1
+
+
+Alles in 172.30.10.X krijgt route
+
+ sudo ip route add 192.168.62.0/24 via 172.30.255.254 dev eth1

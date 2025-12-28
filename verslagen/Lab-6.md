@@ -139,91 +139,55 @@ openssl x509 -req \
 
 Nu is ons webserver certificaat ondertekend door onze eigen CA.
 
-Hierna installeerde ik Nginx op de isprouter:
+Hierna paste ik de apache webserver aan om HTTPS te gebruiken.
 
 ```bash
-sudo apk add nginx
+sudo vi /etc/httpd/conf.d/ssl-tls12.conf
 ```
 
-Vervolgens configureerden we Nginx om als reverse proxy te fungeren en HTTPS te gebruiken. We bewerkten het configuratiebestand:
+Met de volgende aanpassingen:
+
+```apache
+<VirtualHost *:443>
+    ServerName www.cybersec.internal
+
+    SSLEngine on
+    SSLCertificateFile /etc/pki/tls/certs/webserver.crt
+    SSLCertificateKeyFile /etc/pki/tls/private/webserver.key
+
+    SSLProtocol TLSv1.2
+    SSLCipherSuite RSA+AES256-SHA
+    SSLHonorCipherOrder on
+    SSLSessionTickets off
+
+    ProxyPass /cmd http://localhost:8000/
+    ProxyPassReverse /cmd http://localhost:8000/
+
+    ProxyPass /services http://localhost:9200/
+    ProxyPassReverse /services http://localhost:9200/
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerName www.cybersec.internal
+    Redirect permanent / https://www.cybersec.internal/
+</VirtualHost>
+```
+
+We testen de configuratie en herstarten apache:
 
 ```bash
-sudo vi /etc/nginx/nginx.conf
+sudo apachectl configtest
+sudo systemctl restart httpd
 ```
 
-We starten de nginx service:
 
-```bash
-sudo rc-service nginx start
-```
 
-Om deze automatisch te laten starten bij het opstarten van de machine:
-
-```bash
-sudo rc-update add nginx default
-```
-
-Status controleren:
-
-```bash
-sudo rc-service nginx status
-```
-
-Nu maakten we de configuratie voor tls1.2 aan:
-
-```bash
-sudo vi /etc/nginx/http.d/ssl-tls12.conf
-```
-
-Met de volgende inhoud:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name www.cybersec.internal;
-
-    ssl_certificate     /etc/ssl/certs/webserver.crt;
-    ssl_certificate_key /etc/ssl/private/webserver.key;
-
-    ssl_protocols TLSv1.2;
-    ssl_ciphers RSA+AES256-SHA;
-    ssl_prefer_server_ciphers on;
-
-    location / {
-        proxy_pass http://172.30.10.10:80;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-
-server {
-    listen 80;
-    return 301 https://$host$request_uri;
-}
-```
-
-we doen nog een test en een restart van nginx:
-
-```bash
-sudo nginx -t
-sudo rc-service nginx reload
-```
-
-Ik paste nog de record voor het domein aan van de webserver naar het ip adres van de isprouter in de bind configuratie op de dns server:
-
-sudo vi /var/bind/cybersec.internal
-
-```conf
-dns     IN A    172.30.0.4
-www     IN A    192.168.62.254
-services  IN A    192.168.62.254
-```
 
 Na een dig test zien we dat alles correct is ingesteld:
 
 ```bash
 ┌──(vagrant㉿red)-[~]
-└─$ dig dig www.cybersec.internal
+└─$ dig www.cybersec.internal
 
 
 ; <<>> DiG 9.20.11-4+b1-Debian <<>> dig www.cybersec.internal
