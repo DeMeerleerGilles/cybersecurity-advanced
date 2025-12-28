@@ -180,50 +180,32 @@ sudo apachectl configtest
 sudo systemctl restart httpd
 ```
 
-
-
-
 Na een dig test zien we dat alles correct is ingesteld:
 
 ```bash
-┌──(vagrant㉿red)-[~]
+──(vagrant㉿red)-[~/Desktop]
 └─$ dig www.cybersec.internal
 
-
-; <<>> DiG 9.20.11-4+b1-Debian <<>> dig www.cybersec.internal
+; <<>> DiG 9.20.11-4+b1-Debian <<>> www.cybersec.internal
 ;; global options: +cmd
 ;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 9695
-;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
-
-;; OPT PSEUDOSECTION:
-; EDNS: version: 0, flags:; udp: 1232
-; COOKIE: 7eaa9c64e9a18b7601000000694eb3a0d3ee4840ab1f1879 (good)
-;; QUESTION SECTION:
-;dig.                           IN      A
-
-;; Query time: 3 msec
-;; SERVER: 172.30.20.4#53(172.30.20.4) (UDP)
-;; WHEN: Fri Dec 26 11:11:09 EST 2025
-;; MSG SIZE  rcvd: 60
-
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 64171
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 17112
 ;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
 
 ;; OPT PSEUDOSECTION:
 ; EDNS: version: 0, flags:; udp: 1232
-; COOKIE: 7eaa9c64e9a18b7601000000694eb3a0d3ee4840ab1f1879 (good)
+; COOKIE: ac079fe1330aa15601000000695131f40832601b90735ef3 (good)
 ;; QUESTION SECTION:
 ;www.cybersec.internal.         IN      A
 
 ;; ANSWER SECTION:
-www.cybersec.internal.  86400   IN      A       192.168.62.254
+www.cybersec.internal.  86400   IN      A       172.30.10.10
 
-;; Query time: 0 msec
+;; Query time: 4 msec
 ;; SERVER: 172.30.20.4#53(172.30.20.4) (UDP)
-;; WHEN: Fri Dec 26 11:11:09 EST 2025
+;; WHEN: Sun Dec 28 08:34:46 EST 2025
 ;; MSG SIZE  rcvd: 94
+
 ```
 
 Hierna kopieerde ik de certificaten en sleutels naar de juiste locaties op de isprouter:
@@ -272,56 +254,213 @@ We zien nu een mooi slotje in de browser:
 
 Om het verkeer met wireshark te bekijken hebben we nood aan de private key van de webserver. We importeren deze in wireshark.
 
-In wireshark kreeg ik echten geen HTTP verkeer te zien door de Extended Master Secret (EMS) extensie verhindert passieve decryptie met enkel de private key. 
 
-![alt text](<img/Schermafbeelding 2025-12-26 180703.png>)
+![alt text](<img/Schermafbeelding 2025-12-28 143408.png>)
 
 ## HTTPS TLS 1.3
 
-Om TLS 1.3 te configureren, maakte ik een nieuw configuratiebestand aan:
+Om TLS 1.3 te configureren, maakte ik een nieuwe private key aan op de isprouter:
 
 ```bash
-sudo vi /etc/nginx/http.d/ssl-tls13.conf
+openssl genrsa -out webserver_tls13.key 2048
+```
+
+Vervolgens maakte ik een nieuwe CSR aan:
+
+```bash
+openssl req -new \
+-key webserver_tls13.key \
+-out webserver_tls13.csr \
+-config san.cnf
+```
+Hierna ondertekende ik de CSR met onze CA om een certificaat voor TLS 1.3 te maken:
+
+```bash
+openssl x509 -req \
+-in webserver_tls13.csr \
+-CA ca.crt \
+-CAkey ca.key \
+-CAcreateserial \
+-out webserver_tls13.crt \
+-days 825 \
+-sha256 \
+-extfile san.cnf \
+-extensions req_ext
+```
+
+Ik plaatste alles in de juiste mappen:
+
+```bash
+# Certificaten verplaatsen naar de juiste map
+sudo cp webserver_tls13.crt /etc/ssl/certs/
+sudo cp webserver_tls13.key /etc/ssl/private/
+
+# Permissies correct instellen
+sudo chown root:root /etc/ssl/certs/webserver_tls13.crt /etc/ssl/private/webserver_tls13.key
+sudo chmod 644 /etc/ssl/certs/webserver_tls13.crt
+sudo chmod 600 /etc/ssl/private/webserver_tls13.key
+```
+
+Op de webserver paste ik de apache configuratie aan om TLS 1.3 te gebruiken:
+
+```bash
+sudo vi /etc/httpd/conf.d/ssl-tls13.conf
 ```
 
 Met de volgende inhoud:
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name www.cybersec.internal;
+```apache
+<VirtualHost *:443>
+    ServerName www.cybersec.internal
 
-    ssl_certificate     /etc/ssl/certs/webserver.crt;
-    ssl_certificate_key /etc/ssl/private/webserver.key;
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/webserver_tls13.crt
+    SSLCertificateKeyFile /etc/ssl/private/webserver_tls13.key
 
-    ssl_protocols TLSv1.3;
-    ssl_ciphers TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256;
-    ssl_prefer_server_ciphers on;
+    SSLProtocol TLSv1.3
+    # Cipher suites voor TLS 1.3 worden automatisch gekozen
+    # Je hoeft SSLCipherSuite niet aan te passen tenzij je wil beperken
 
+    ProxyPass /cmd http://localhost:8000/
+    ProxyPassReverse /cmd http://localhost:8000/
 
-    location / {
-        proxy_pass http://172.30.10.10:80;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
+    ProxyPass /services http://localhost:9200/
+    ProxyPassReverse /services http://localhost:9200/
+</VirtualHost>
 
-server {
-    listen 80;
-    server_name www.cybersec.internal;
-    return 301 https://$host$request_uri;
-}
-
+<VirtualHost *:80>
+    ServerName www.cybersec.internal
+    Redirect permanent / https://www.cybersec.internal/
+</VirtualHost>
 ```
 
-We testten de configuratie en herlaadden nginx:
+Hierna testte ik de configuratie en herstartte ik apache:
 
 ```bash
-sudo nginx -t
-sudo rc-service nginx reload
+sudo apachectl configtest
+sudo systemctl restart httpd
 ```
 
-TODO : screenshot van TLS 1.3 in browser & wireshark
+We kunnen nu controleren of TLS 1.3 actief is met het volgende commando:
+
+```bash
+[vagrant@web ~]$ openssl s_client -connect www.cybersec.internal:443 -tls1_3
+Connecting to 127.0.2.1
+CONNECTED(00000003)
+40C7904F467F0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version:ssl/record/rec_layer_s3.c:916:SSL alert number 70
+---
+no peer certificate available
+---
+No client certificate CA names sent
+Negotiated TLS1.3 group: <NULL>
+---
+SSL handshake has read 7 bytes and written 262 bytes
+Verification: OK
+---
+New, (NONE), Cipher is (NONE)
+Protocol: TLSv1.3
+This TLS version forbids renegotiation.
+Compression: NONE
+Expansion: NONE
+No ALPN negotiated
+Early data was not sent
+Verify return code: 0 (ok)
+---
+```
+
+We zien dat TLSv1.3 actief is.
+
+## SSLKEYLOGFILE
+
+SSLKEYLOGFILE laat een client (browser) de gebruikte sessiesleutels wegschrijven naar een bestand zodat tools zoals Wireshark HTTPS-verkeer kunnen ontsleutelen, zelfs bij TLS 1.3.
+
+We kunnen dit op onze kali machine doen door de volgende stappen te volgen:
+
+Eerst killen we alle open browsers:
+
+```bash
+pkill firefox
+```
+
+Vervolgens stellen we de omgevingsvariabele in:
+
+```bash
+export SSLKEYLOGFILE=/home/kali/sslkeys.log
+```
+
+Nu starten we de browser vanuit dezelfde terminal:
+
+```bash
+firefox &
+```
+
+We bezoeken de website:
+
+Afbeelding van de website met HTTPS
+
+We sluiten de browser en stellen het bestand met de sessiesleutels veilig:
+
+```bash
+cp ~/sslkeys.log ~/sslkeys_copy.log
+
+```
+Helaas heb ik dit niet kunnen exporteren naar het bestand; ik kreeg steeds een leeg bestand.
+
+```bash
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+
+[1]  + terminated  firefox https://www.cybersec.internal
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ ls -l /home/vagrant/Desktop/sslkeys.log
+
+ls: cannot access '/home/vagrant/Desktop/sslkeys.log': No such file or directory
+                                                                                                                                                                                                                                           
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ echo $HOME
+
+/home/vagrant
+                                                                                                                                                                                                                                           
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ pkill -9 firefox
+
+                                                                                                                                                                                                                                           
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ touch /home/vagrant/Desktop/sslkeys.log
+chmod 600 /home/vagrant/Desktop/sslkeys.log
+ls -l /home/vagrant/Desktop/sslkeys.log
+
+-rw------- 1 vagrant vagrant 0 Dec 28 09:22 /home/vagrant/Desktop/sslkeys.log
+                                                                                                                                                                                                                                           
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ SSLKEYLOGFILE=/home/vagrant/Desktop/sslkeys.log firefox https://www.cybersec.internal &
+
+[1] 34246
+                                                                                                                                                                                                                                           
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ pkill firefox
+
+                                                                                                                                                                                                                                           
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+Exiting due to channel error.
+
+[1]  + terminated  SSLKEYLOGFILE=/home/vagrant/Desktop/sslkeys.log firefox 
+┌──(vagrant㉿red)-[~/Desktop]
+└─$ ls -l /home/vagrant/Desktop/sslkeys.log
+head /home/vagrant/Desktop/sslkeys.log
+
+-rw------- 1 vagrant vagrant 0 Dec 28 09:22 /home/vagrant/Desktop/sslkeys.log
+```
 
 ## Vragen bij het labo:
 
