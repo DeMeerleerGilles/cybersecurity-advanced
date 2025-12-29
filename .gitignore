@@ -11,3 +11,5 @@
 
 # VirtualBox appliances
 *.ova
+
+*.key

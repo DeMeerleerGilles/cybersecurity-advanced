@@ -106,7 +106,7 @@ SOCKS via SSH is interessant wanneer een gebruiker volledige, versleutelde netwe
 Ik begon met het kopieren van de publieke sleutel van mijn laptop naar alle verschillende VMs met het commando:
 
 ```bash
-ssh-copy-id -i ~/.ssh/id_rsa.pub vagrant@192.168.62.253
+ssh-copy-id -i ~/.ssh/id_rsa.pub vagrant@172.30.20.50
 cat ~/.ssh/id_rsa.pub | ssh vagrant@172.30.10.10 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | ssh vagrant@172.30.20.4  "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | ssh vagrant@172.30.20.15 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
