@@ -134,3 +134,88 @@ sudo systemctl start wazuh-agent
 Ik zag deze meteen verschijnen in het dashboard:
 
 ![alt text](<img/Schermafbeelding 2025-12-29 114909.png>)
+
+Ik deed hetzelfde voor alle andere almalinux machines.
+
+![alt text](<img/Schermafbeelding 2025-12-29 142049.png>)
+
+(web is niet beschikbaar omdat ik deze had uitgeschakeld om wat ram te besparen)
+
+Ik recupereerde een windows client van het vak windows server. Ik stopte ook deze in het netwerk.Ik voegde de agent toe op dezelfde manier als bij de almalinux machines.
+
+## File Integrity Monitoring
+
+Ik voegde in de /var/ossec/etc/ossec.conf van de SIEM server de volgende regels toe om file integrity monitoring in te schakelen:
+
+```xml
+ <directories check_all="yes">/home</directories>
+```
+
+Hierdoor worden alle bestanden in de home directory van alle gebruikers gemonitord op wijzigingen.
+
+We doen een klein testje door een bestand aan te maken in de home directory van de vagrant gebruiker op de companyrouter:
+
+```bash
+touch /home/testfile.txt
+echo "test" >> /home/testfile.txt
+rm /home/testfile.txt
+```
+
+Ik had veel problemen om de logs zichtbaar te krijgen in het dashboard, dit kwam doordat mijn VM een schijf had van slechts 20GB en de indexer hierdoor vastliep. Na het vergroten van de schijf naar 50GB werkte alles terug naar behoren.
+
+![alt text](<img/Schermafbeelding 2025-12-29 172455.png>)
+
+## Windows endpoint detection
+
+Hierna ging ik verder met het installeren van sysmon op de windows client om zo windows endpoint detection in te schakelen. Ik downloadde sysmon van de microsoft website en installeerde het met de volgende commando's.
+
+Ik downloade eerst de sysmon zip file en pakte deze uit:
+
+https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
+
+Deze pakte ik uit in de map C:\Tools\Sysmon
+
+Ik downloade ook een config file voor sysmon op github: https://github.com/SwiftOnSecurity/sysmon-config
+
+Nu voerde ik het volgende commando uit in een powershell terminal met administrator rechten om sysmon te installeren met de config file:
+
+```powershell
+PS C:\Tools\Sysmon>
+>> .\Sysmon64.exe -accepteula -i sysmonconfig.xml
+
+
+System Monitor v15.15 - System activity monitor
+By Mark Russinovich and Thomas Garnier
+Copyright (C) 2014-2024 Microsoft Corporation
+Using libxml2. libxml2 is Copyright (C) 1998-2012 Daniel Veillard. All Rights Reserved.
+Sysinternals - www.sysinternals.com
+
+Loading configuration file with schema version 4.50
+Sysmon schema version: 4.90
+Configuration file validated.
+Sysmon64 installed.
+SysmonDrv installed.
+Starting SysmonDrv.
+SysmonDrv started.
+Starting Sysmon64..
+Sysmon64 started.
+```
+
+In de event viewer kon ik nu de sysmon logs zien onder Applications and Services Logs -> Microsoft -> Windows -> Sysmon -> Operational
+
+Je ziet dat ik een notepad opgestart heb.
+
+![alt text](<img/Schermafbeelding 2025-12-29 173840.png>)
+
+### Powershell logging
+
+Om powershell logging in te schakelen ging ik naar de local group policy editor door gpedit.msc uit te voeren in het startmenu.
+
+onder Computer Configuration -> Administrative Templates -> Windows Components -> Windows PowerShell zette ik de volgende policies op enabled:
+
+- Module Logging
+- Script Block Logging
+
+![alt text](<img/Schermafbeelding 2025-12-29 174946.png>)
+
+TODO Dit nog demonstreren in het dashboard 
