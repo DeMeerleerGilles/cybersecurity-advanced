@@ -218,4 +218,6 @@ onder Computer Configuration -> Administrative Templates -> Windows Components -
 
 ![alt text](<img/Schermafbeelding 2025-12-29 174946.png>)
 
-TODO Dit nog demonstreren in het dashboard 
+We zien deze logs nu verschijnen onder threat hunting in het wazuh dashboard:
+
+![alt text](<img/Schermafbeelding 2025-12-30 103135.png>)

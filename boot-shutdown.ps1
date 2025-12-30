@@ -10,7 +10,7 @@ $VMs = @(
     "isprouter",
     "homerouter",
     "remote-employee",
-    "red-kali",
+    #"red-kali",
     "siem"
 )
 
