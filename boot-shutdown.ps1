@@ -4,14 +4,13 @@
 $VMs = @(
     "companyrouter 1",
     "dns",
-    #"web",
+    "web",
     "database",
     "employee",
     "isprouter",
     "homerouter",
     "remote-employee",
-    #"red-kali",
-    "siem"
+    "red-kali"
 )
 
 function Start-CSA-Machines {

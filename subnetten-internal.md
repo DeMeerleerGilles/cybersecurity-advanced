@@ -31,3 +31,6 @@ sudo ip route add 192.168.62.0/24 via 172.30.255.254 dev eth1
 Alles in 172.30.10.X krijgt route
 
 sudo ip route add 192.168.62.0/24 via 172.30.255.254 dev eth1
+
+op de remote-employee:
+sudo ip route add 172.30.0.0/16 via 172.10.10.254
