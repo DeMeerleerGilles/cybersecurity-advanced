@@ -55,42 +55,31 @@ Hierna maakte ik een bestand aan op de homerouter om het script uit de opgave in
 ```bash
 #!/usr/bin/env sh
 
-# Manual IPSec
+# 1. Opschonen
+sudo ip xfrm state flush
+sudo ip xfrm policy flush
 
-## Clean all previous IPsec stuff
+# 2. Variabelen (Zorg dat deze exact hetzelfde zijn op beide routers)
+SPI_HOME_TO_COMP=0x007
+KEY_HOME_TO_COMP=0xFEDCBA9876543210FEDCBA9876543210
 
-ip xfrm policy flush
-ip xfrm state flush
+SPI_COMP_TO_HOME=0x008
+KEY_COMP_TO_HOME=0x8c51dbe8f193bddddf5d91efd3f7b9fb
 
-## The first SA vars for the tunnel from homerouter to companyrouter
+# 3. States (SA) - Hoe we versleutelen en ontsleutelen
+# Uitgaand naar Company
+sudo ip xfrm state add src 192.168.62.42 dst 192.168.62.253 proto esp spi $SPI_HOME_TO_COMP mode tunnel enc aes $KEY_HOME_TO_COMP
+# Inkomend van Company
+sudo ip xfrm state add src 192.168.62.253 dst 192.168.62.42 proto esp spi $SPI_COMP_TO_HOME mode tunnel enc aes $KEY_COMP_TO_HOME
 
-SPI7=0x007
-ENCKEY7=0xFEDCBA9876543210FEDCBA9876543210
+# 4. Policies (SP) - Welk verkeer moet de tunnel in/uit
+# OUT: Van Home-LAN naar Company-LAN
+sudo ip xfrm policy add src 172.10.10.0/24 dst 172.30.0.0/16 dir out tmpl src 192.168.62.42 dst 192.168.62.253 proto esp spi $SPI_HOME_TO_COMP mode tunnel
+# FWD/IN: Van Company-LAN naar Home-LAN (doorsturen naar de employee)
+sudo ip xfrm policy add src 172.30.0.0/16 dst 172.10.10.0/24 dir fwd tmpl src 192.168.62.253 dst 192.168.62.42 proto esp spi $SPI_COMP_TO_HOME mode tunnel
+sudo ip xfrm policy add src 172.30.0.0/16 dst 172.10.10.0/24 dir in tmpl src 192.168.62.253 dst 192.168.62.42 proto esp spi $SPI_COMP_TO_HOME mode tunnel
 
-## Activate the tunnel from homerouter to companyrouter
-
-### Define the SA (Security Association)
-
-ip xfrm state add \
-    src 192.168.62.42 \
-    dst 192.168.62.253 \
-    proto esp \
-    spi ${SPI7} \
-    mode tunnel \
-    enc aes ${ENCKEY7}
-
-### Set up the SP using this SA
-
-ip xfrm policy add \
-    src 172.10.10.0/24 \
-    dst 172.30.0.0/16 \
-    dir out \
-    tmpl \
-    src 192.168.62.42 \
-    dst 192.168.62.253 \
-    proto esp \
-    spi ${SPI7} \
-    mode tunnel
+echo "Homerouter IPsec configuratie voltooid."
 ```
 
 Ik paste dit script aan om het ook op de companyrouter te kunnen uitvoeren:
@@ -98,56 +87,101 @@ Ik paste dit script aan om het ook op de companyrouter te kunnen uitvoeren:
 ```bash
 #!/usr/bin/env sh
 
-ip xfrm policy flush
-ip xfrm state flush
+# 1. Opschonen
+sudo ip xfrm state flush
+sudo ip xfrm policy flush
 
-SPI7=0x007
-ENCKEY7=0xFEDCBA9876543210FEDCBA9876543210
+# 2. Variabelen (Identiek aan Homerouter)
+SPI_HOME_TO_COMP=0x007
+KEY_HOME_TO_COMP=0xFEDCBA9876543210FEDCBA9876543210
 
-ip xfrm state add \
-    src 192.168.62.42 \
-    dst 192.168.62.253 \
-    proto esp \
-    spi ${SPI7} \
-    mode tunnel \
-    enc aes ${ENCKEY7}
+SPI_COMP_TO_HOME=0x008
+KEY_COMP_TO_HOME=0x8c51dbe8f193bddddf5d91efd3f7b9fb
 
-ip xfrm policy add \
-    src 172.10.10.0/24 \
-    dst 172.30.0.0/16 \
-    dir in \
-    tmpl \
-    src 192.168.62.42 \
-    dst 192.168.62.253 \
-    proto esp \
-    spi ${SPI7} \
-    mode tunnel
+# 3. States (SA)
+# Inkomend van Home
+sudo ip xfrm state add src 192.168.62.42 dst 192.168.62.253 proto esp spi $SPI_HOME_TO_COMP mode tunnel enc aes $KEY_HOME_TO_COMP
+# Uitgaand naar Home
+sudo ip xfrm state add src 192.168.62.253 dst 192.168.62.42 proto esp spi $SPI_COMP_TO_HOME mode tunnel enc aes $KEY_COMP_TO_HOME
+
+# 4. Policies (SP)
+# OUT: Van Company-LAN naar Home-LAN
+sudo ip xfrm policy add src 172.30.0.0/16 dst 172.10.10.0/24 dir out tmpl src 192.168.62.253 dst 192.168.62.42 proto esp spi $SPI_COMP_TO_HOME mode tunnel
+# FWD/IN: Van Home-LAN naar Company-LAN (doorsturen naar de webserver)
+sudo ip xfrm policy add src 172.10.10.0/24 dst 172.30.0.0/16 dir fwd tmpl src 192.168.62.42 dst 192.168.62.253 proto esp spi $SPI_HOME_TO_COMP mode tunnel
+sudo ip xfrm policy add src 172.10.10.0/24 dst 172.30.0.0/16 dir in tmpl src 192.168.62.42 dst 192.168.62.253 proto esp spi $SPI_HOME_TO_COMP mode tunnel
+
+echo "Companyrouter IPsec configuratie voltooid."
 ```
 
-Na het uitvoeren van deze scripts op beide routers, startte ik opnieuw de ping vanaf de remote-employee naar de webserver:
+Nu kunnen we onopgemerkt pingen van de remote-employee naar de webserver:
 
 ```bash
-[vagrant@remote-employee ~]$ ping 172.30.10.10
-PING 172.30.10.10 (172.30.10.10) 56(84) bytes of data.
-64 bytes from 172.30.10.10: icmp_seq=1 ttl=61 time=47.7 ms
-64 bytes from 172.30.10.10: icmp_seq=2 ttl=61 time=16.5 ms
-64 bytes from 172.30.10.10: icmp_seq=3 ttl=61 time=9.89 ms
-64 bytes from 172.30.10.10: icmp_seq=4 ttl=61 time=12.5 ms
-64 bytes from 172.30.10.10: icmp_seq=5 ttl=61 time=8.74 ms
-64 bytes from 172.30.10.10: icmp_seq=6 ttl=61 time=9.96 ms
-64 bytes from 172.30.10.10: icmp_seq=7 ttl=61 time=12.7 ms
-64 bytes from 172.30.10.10: icmp_seq=8 ttl=61 time=22.5 ms
-64 bytes from 172.30.10.10: icmp_seq=9 ttl=61 time=10.1 ms
-64 bytes from 172.30.10.10: icmp_seq=10 ttl=61 time=17.8 ms
+[vagrant@remote-employee ~]$ ping 192.168.62.42
+PING 192.168.62.42 (192.168.62.42) 56(84) bytes of data.
+64 bytes from 192.168.62.42: icmp_seq=1 ttl=64 time=0.166 ms
+64 bytes from 192.168.62.42: icmp_seq=2 ttl=64 time=0.389 ms
+64 bytes from 192.168.62.42: icmp_seq=3 ttl=64 time=0.324 ms
+64 bytes from 192.168.62.42: icmp_seq=4 ttl=64 time=0.371 ms
+64 bytes from 192.168.62.42: icmp_seq=5 ttl=64 time=0.397 ms
 ^C
---- 172.30.10.10 ping statistics ---
-10 packets transmitted, 10 received, 0% packet loss, time 9017ms
-rtt min/avg/max/mdev = 8.740/16.839/47.719/11.087 ms
-[vagrant@remote-employee ~]$ ping 172.30.10.10
-PING 172.30.10.10 (172.30.10.10) 56(84) bytes of data.
-^C
---- 172.30.10.10 ping statistics ---
-39 packets transmitted, 0 received, 100% packet loss, time 38912ms
+--- 192.168.62.42 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4077ms
+rtt min/avg/max/mdev = 0.166/0.329/0.397/0.085 ms
 ```
 
-Dit werkte niet.
+We zien in wireshark enkel ESP verkeer langskomen:
+
+![alt text](<img/Schermafbeelding 2025-12-31 113603.png>)
+
+Ik voegde in de firewall op de companyrouter nog enkele regels toe om het verkeer toe te laten:
+
+Deze om het verkeer van de remote-employee naar de intranet en dmz toe te laten:
+ip saddr 192.168.62.42 ip protocol esp accept
+
+En deze om het antwoordverkeer van de intranet en dmz naar de remote-employee toe te laten:
+
+ip saddr 172.10.10.0/24 ip daddr { $dmz_net, $intranet_net } accept
+
+## Decryption 
+
+Decryption¶
+
+You are using static keys, opposed to what IKE would organize for you. But knowing the key, and the SPI: can you decrypt the traffic you have captured in Wireshark?
+
+Ja, wireshark heeft een ingebouwde functionaliteit om IPsec ESP-verkeer te decoderen als je de juiste sleutels en SPI's hebt. 
+
+We gaan naar de ESP instellingen in Wireshark:
+
+1. Open Wireshark
+2. Ga naar Edit -> Preferences.
+3. Open ESP
+
+Nu moeten we de sleutels toevoegen:
+
+4. Vink het vakje Attempt to detect/decode encrypted ESP payloads aan.
+5. Klik op de knop Edit... naast ESP SAs.
+6. Klik op het + icoontje om een nieuwe SA toe te voegen.
+
+Vul de volgende gegevens in voor de eerste richting (Home -> Company):
+
+- Src IP: 192.168.62.42
+- Dest IP: 192.168.62.253
+- SPI: 0x00000007 (of 7)
+- Encryption Algorithm: AES-CBC [RFC3602]
+- Encryption Key: 0xFEDCBA9876543210FEDCBA9876543210 (zonder de 0x als Wireshark klaagt)
+- Authentication Algorithm: NULL (we hebben in het script geen auth gedefinieerd).
+
+Herhaal dit voor de tweede richting (Company -> Home):
+
+- Src IP: 192.168.62.253
+- Dest IP: 192.168.62.42
+- SPI: 0x00000008
+- Encryption Algorithm: AES-CBC [RFC3602]
+- Encryption Key: 0x8c51dbe8f193bddddf5d91efd3f7b9fb
+
+![alt text](<img/Schermafbeelding 2025-12-31 120113.png>)
+
+Nu is het verkeer gedecodeerd en kunnen we de ICMP-pakketten zien:
+
+![alt text](<img/Schermafbeelding 2025-12-31 120236.png>)
