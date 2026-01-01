@@ -186,4 +186,79 @@ en zette de volgende regel uit:
 ;tls-auth ta.key 1
 ```
 
-TODO: starten en testen VPN verbinding
+## VPN starten
+
+Op de companyrouter startte ik de openvpn server:
+
+```bash
+cd /etc/openvpn
+sudo openvpn server.conf
+```
+
+De VPN server is nu gestart.
+
+```bash
+[vagrant@companyrouter openvpn]$ sudo openvpn server.conf
+2026-01-01 09:46:39 DEPRECATED OPTION: --cipher set to 'AES-256-CBC' but missing in --data-ciphers (AES-256-GCM:AES-128-GCM). Future OpenVPN version will ignore --cipher for cipher negotiations. Add 'AES-256-CBC' to --data-ciphers or change --cipher 'AES-256-CBC' to --data-ciphers-fallback 'AES-256-CBC' to silence this warning.
+2026-01-01 09:46:39 OpenVPN 2.5.11 x86_64-redhat-linux-gnu [SSL (OpenSSL)] [LZO] [LZ4] [EPOLL] [PKCS11] [MH/PKTINFO] [AEAD] built on Jul 18 2024
+2026-01-01 09:46:39 library versions: OpenSSL 3.2.2 4 Jun 2024, LZO 2.10
+2026-01-01 09:46:39 net_route_v4_best_gw query: dst 0.0.0.0
+2026-01-01 09:46:39 net_route_v4_best_gw result: via 10.0.2.2 dev eth0
+2026-01-01 09:46:39 Diffie-Hellman initialized with 2048 bit key
+2026-01-01 09:46:39 TUN/TAP device tun0 opened
+2026-01-01 09:46:39 net_iface_mtu_set: mtu 1500 for tun0
+2026-01-01 09:46:39 net_iface_up: set tun0 up
+2026-01-01 09:46:39 net_addr_v4_add: 10.8.0.1/24 dev tun0
+2026-01-01 09:46:39 Could not determine IPv4/IPv6 protocol. Using AF_INET
+2026-01-01 09:46:39 Socket Buffers: R=[212992->212992] S=[212992->212992]
+2026-01-01 09:46:39 UDPv4 link local (bound): [AF_INET]192.168.62.253:1194
+2026-01-01 09:46:39 UDPv4 link remote: [AF_UNSPEC]
+2026-01-01 09:46:39 MULTI: multi_init called, r=256 v=256
+2026-01-01 09:46:39 IFCONFIG POOL IPv4: base=10.8.0.2 size=253
+2026-01-01 09:46:39 IFCONFIG POOL LIST
+2026-01-01 09:46:39 Initialization Sequence Completed
+```
+
+Op de remote employee machine startte ik de openvpn client:
+
+```bash
+cd ~/openvpn
+sudo openvpn client.conf
+```
+
+Voor de authenticatie vulde ik de volgende gegevens in:
+
+
+Username: vagrant
+Password: vagrant
+
+
+De VPN client is nu gestart. Ik opende een nieuwe terminal op de remote employee. Als ik nu mijn IP adres opvroeg zag ik dat ik een IP adres uit het VPN subnet had gekregen:
+
+```bash
+4: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 500
+    link/none
+    inet 10.8.0.2/24 scope global tun0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::e8d4:2af5:8cbf:1ab5/64 scope link stable-privacy
+       valid_lft forever preferred_lft forever
+```
+
+Als we nu een ping doen naar de dns server in het interne netwerk zien we dat de VPN verbinding werkt:
+
+```bash
+[vagrant@remote-employee ~]$ ping 172.30.20.15
+PING 172.30.20.15 (172.30.20.15) 56(84) bytes of data.
+64 bytes from 172.30.20.15: icmp_seq=1 ttl=63 time=0.921 ms
+64 bytes from 172.30.20.15: icmp_seq=2 ttl=63 time=1.22 ms
+64 bytes from 172.30.20.15: icmp_seq=3 ttl=63 time=1.07 ms
+^C
+--- 172.30.20.15 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 0.921/1.070/1.220/0.122 ms
+```
+
+In wireshark zien we dit dan als UDP verkeer.
+
+
+![alt text](<img/Schermafbeelding 2026-01-01 110905.png>)
