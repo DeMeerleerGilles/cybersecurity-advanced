@@ -96,7 +96,7 @@ eth1: 192.168.62.253/24 → default gateway gaat via 192.168.62.254. Dit is dus 
 eth2: 172.30.255.254/16 → intern netwerk. Hier hangen employee, dns, web op.
 
 What did you have to configure on your red machine to have internet and to properly ping the web machine (is the ping working on IP only or also on hostname)?
-De default gateway moest ingesteld worden op 192.168.62.254. Daarnaast had ik ook nog een probleem met de DNS. Dit viel op te loessen door:
+De default gateway moest ingesteld worden op 192.168.62.254. Daarnaast had ik ook nog een probleem met de DNS. Dit viel op te lossen door:
 
 ```bash
  echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf
