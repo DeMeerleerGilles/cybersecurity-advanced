@@ -43,6 +43,13 @@ sudo dnf update
 sudo dnf search borgbackup
 ```
 
+Op de alpine:
+
+```bash
+apk update
+apk add borgbackup
+```
+
 Nu moesten we de repository initialiseren:
 
 ```bash
@@ -144,9 +151,10 @@ du -h --si ~/important-files
 grootte van de backup op de server bekijken:
 
 ```bash
-1.7M    /home/vagrant/backups/data/0
-1.7M    /home/vagrant/backups/data
-1.7M    /home/vagrant/backups
+[vagrant@web ~]$ du -h ~/important-files
+du -h --si ~/important-files
+1.7M    /home/vagrant/important-files
+1.8M    /home/vagrant/important-files
 ```
 
 We moeten ook regelmatig de integriteit van de repository controleren:
@@ -176,10 +184,10 @@ Deze is nu leeg:
 [vagrant@web important-files]$ 
 ```
 
-We gaan nu de data terugzetten vanuit de tweede backup: (er was blijkbaar iets mis met de first backup, dus ik gebruikte de second)
+We gaan nu de data terugzetten vanuit de eerste backup:
 
 ```bash
-[vagrant@web ~]$ borg extract vagrant@172.30.20.15:~/backups::second --strip-components 3
+[vagrant@web ~]$ borg extract vagrant@172.30.20.15:~/backups::first --strip-components 3
 Enter passphrase for key ssh://vagrant@172.30.20.15/~/backups:
 [vagrant@web ~]$ ls
 100.txt  bf1f3fb5-b119-4f9f-9930-8e20e892b898-720.mp4  test.txt
@@ -273,5 +281,4 @@ Tue 2025-12-23 09:51:12 UTC 4min 54s left Tue 2025-12-23 09:46:12 UTC 5s ago    
 ```
 
 Borg compact verwijdert onnodige data uit de repository om ruimte te besparen.
-
 
