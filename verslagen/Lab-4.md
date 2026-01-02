@@ -1,4 +1,4 @@
-# Verslag labo 4: Honeypots (KIJK NA IN DE KERSTVAKANTIE FOUTEN NA DIT LABO ROLLBACK GEDAAN)
+# Verslag labo 4: Honeypots
 
 ## What is a honeypot?
 
@@ -76,9 +76,15 @@ sudo docker run -d \
   cowrie/cowrie:latest
 ```
 
+Om de container automatisch te laten starten bij het opstarten van de VM:
+
+```bash
+sudo docker update --restart unless-stopped cowrie
+```
+
 Crowie draait nu op de ssh poort. We kunnen verbinding maken met de router.
 
-via het ssh commando ssh root@192.168.62.253
+via het ssh commando: `ssh root@192.168.62.253`
 
 What credentials work? Do you find credentials that don't work?
 
@@ -101,8 +107,98 @@ Ja, alle ingegeven commando’s worden gelogd, inclusief:
 Can an attacker perform malicious things?
 Are the actions, in other words, the commands, logged to a file? Which file?
 
-ls -l /opt/cowrie/log
-cat /opt/cowrie/log/cowrie.json | less
+Deze komen in het logbestand cowrie.json te staan, dit bestand is terug te vinden in de docker volume op de host:
+
+```bash
+sudo cat /var/lib/docker/volumes/0ba09fa5d96ac103633bbe1a1f25b002b3218dd6a4e305cac89c363efd60bd3b/_data/log/cowrie/cowrie.json | jq .
+```
+
+Deel van de output:
+
+```json
+ "message": "SSH client hassh fingerprint: 701158e75b508e76f0410d5d22ef9df0",
+  "sensor": "1b264fc3979f",
+  "uuid": "5c16120c-e619-11f0-a404-7eb184fd5be4",
+  "timestamp": "2026-01-02T11:13:08.907586Z",
+  "src_ip": "192.168.62.0",
+  "session": "e9c7ef908578",
+  "protocol": "ssh"
+}
+{
+  "eventid": "cowrie.login.success",
+  "username": "root",
+  "password": "hhdd",
+  "message": "login attempt [root/hhdd] succeeded",
+  "sensor": "1b264fc3979f",
+  "uuid": "5c16120c-e619-11f0-a404-7eb184fd5be4",
+  "timestamp": "2026-01-02T11:13:10.972102Z",
+  "src_ip": "192.168.62.0",
+  "session": "e9c7ef908578",
+  "protocol": "ssh"
+}
+{
+  "eventid": "cowrie.client.size",
+  "width": 102,
+  "height": 14,
+  "message": "Terminal Size: 102 14",
+  "sensor": "1b264fc3979f",
+  "uuid": "5c16120c-e619-11f0-a404-7eb184fd5be4",
+  "timestamp": "2026-01-02T11:13:11.052099Z",
+  "src_ip": "192.168.62.0",
+  "session": "e9c7ef908578",
+  "protocol": "ssh"
+}
+{
+  "eventid": "cowrie.session.params",
+  "arch": "linux-x64-lsb",
+  "message": [],
+  "sensor": "1b264fc3979f",
+  "uuid": "5c16120c-e619-11f0-a404-7eb184fd5be4",
+  "timestamp": "2026-01-02T11:13:11.053932Z",
+  "src_ip": "192.168.62.0",
+  "session": "e9c7ef908578",
+  "protocol": "ssh"
+}
+{
+  "eventid": "cowrie.command.input",
+  "input": "curl localhost",
+  "message": "CMD: curl localhost",
+  "sensor": "1b264fc3979f",
+  "uuid": "5c16120c-e619-11f0-a404-7eb184fd5be4",
+  "timestamp": "2026-01-02T11:13:17.495586Z",
+  "src_ip": "192.168.62.0",
+  "session": "e9c7ef908578",
+  "protocol": "ssh"
+}
+{
+  "eventid": "cowrie.command.input",
+  "input": "ls",
+  "message": "CMD: ls",
+  "sensor": "1b264fc3979f",
+  "uuid": "5c16120c-e619-11f0-a404-7eb184fd5be4",
+  "timestamp": "2026-01-02T11:13:29.512887Z",
+  "src_ip": "192.168.62.0",
+  "session": "e9c7ef908578",
+  "protocol": "ssh"
+}
+{
+  "eventid": "cowrie.session.closed",
+  "duration": "200.5",
+  "message": "Connection lost after 200.5 seconds",
+  "sensor": "1b264fc3979f",
+  "uuid": "5c16120c-e619-11f0-a404-7eb184fd5be4",
+  "timestamp": "2026-01-02T11:16:29.355355Z",
+  "src_ip": "192.168.62.0",
+  "session": "e9c7ef908578",
+  "protocol": "ssh"
+}
+```
+
+We kunnen ook de logs in real-time bekijken met:
+
+```bash
+sudo docker logs -f cowrie
+```
 
 Nee, een aanvaller kan geen echte schade aanrichten. Alles gebeurt binnen de geëmuleerde omgeving:
 
