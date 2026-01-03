@@ -46,13 +46,20 @@ In cybersecurity and virtualization we got to know Wireshark. Most captures were
    Protocol: TCP
 
 5. Some cleartext data was transferred between two machines. Can you spot the data? Can you deduce what happened here?
+    Ik zocht dit op door te filteren op http en zag dan een paar requests en responses. Het ging hier om een webpagina die werd opgevraagd en een POST. Het was op de cmd pagina een ip a commando die werd uitgevoerd.
 
-    Couldn't find any cleartext data.
+![alt text](<img/Schermafbeelding 2026-01-03 151405.png>)
 
 6. Someone used a specific way to transfer a png on the wire. Is it possible to export this png easily? 
-   
-   Is it possible to export other HTTP related stuff?
-   It is possible to export the png file because it is transferred over HTTP and thus in the packet capture. Other HTTP related stuff can also be exported.
+   Dit is zeker mogelijk. Er is gebruik gemaakt van HTTP om de png te transfereren dus deze zit in de capture.
+
+   De stappen hiervoor zijn:
+   Navigeer naar Export: Ga in de menubalk bovenin naar:
+    - File (Bestand)
+    - Export Objects
+    - HTTP...
+
+![alt text](<img/Schermafbeelding 2026-01-03 151628.png>)
 
 ## Company router
 
@@ -86,6 +93,99 @@ default via 192.168.62.254 dev eth1 proto static metric 100
 172.30.0.0/16 dev eth2 proto kernel scope link src 172.30.255.254 metric 101
 192.168.62.0/24 dev eth1 proto kernel scope link src 192.168.62.253 metric 100
 ```
+
+### Capture traffic using the CLI
+
+#### Interfaces kiezen op de CompanyRouter
+
+Om dit te bepalen, kijken we met ip a op de companyrouter welke interfaces er zijn en welke IP-adressen ze hebben.
+
+Voor het verkeer van de DNS naar naar het internet: we kiezen de interface die verbonden is met het WAN/ISP netwerk, bij mij is dit eth1 (192.168.62.253/24).
+
+Van DNS naar Employee, we kiezen de interface die verbonden is met het interne netwerk, bij mij is dit eth3 (172.30.20.254/24).
+
+#### Pings testen met tcpdump
+
+Test this out by pinging from employee to the companyrouter and from employee to the dns. Are you able to see all pings in tcpdump on the companyrouter?
+
+We maken verbinding met employee via ssh en pingen de companyrouter en dns aan:
+
+```bash
+[vagrant@companyrouter ~]$ sudo tcpdump -i eth3 icmp
+dropped privs to tcpdump
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on eth3, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+14:59:04.029148 IP 172.30.20.123 > companyrouter: ICMP echo request, id 2, seq 0, length 64
+14:59:04.029187 IP companyrouter > 172.30.20.123: ICMP echo reply, id 2, seq 0, length 64
+14:59:05.029222 IP 172.30.20.123 > companyrouter: ICMP echo request, id 2, seq 1, length 64
+14:59:05.029270 IP companyrouter > 172.30.20.123: ICMP echo reply, id 2, seq 1, length 64
+14:59:06.029253 IP 172.30.20.123 > companyrouter: ICMP echo request, id 2, seq 2, length 64
+14:59:06.029295 IP companyrouter > 172.30.20.123: ICMP echo reply, id 2, seq 2, length 64
+14:59:07.029340 IP 172.30.20.123 > companyrouter: ICMP echo request, id 2, seq 3, length 64
+14:59:07.029382 IP companyrouter > 172.30.20.123: ICMP echo reply, id 2, seq 3, length 64
+14:59:08.029399 IP 172.30.20.123 > companyrouter: ICMP echo request, id 2, seq 4, length 64
+14:59:08.029474 IP companyrouter > 172.30.20.123: ICMP echo reply, id 2, seq 4, length 64
+14:59:09.029476 IP 172.30.20.123 > companyrouter: ICMP echo request, id 2, seq 5, length 64
+14:59:09.029523 IP companyrouter > 172.30.20.123: ICMP echo reply, id 2, seq 5, length 64
+```
+
+Van de DNS naar de employee zag ik niets in tcpdump. Dit is logisch want de pings gaan niet via de companyrouter maar rechtstreeks via het interne netwerk.
+
+#### Opslaan naar een bestand en analyseren
+
+We kunnen een capture opslaan naar een bestand met de -w flag:
+
+```bash
+sudo tcpdump -i any -w capture_test.pcap
+```
+
+Om het bestand te analyseren, kopieerde ik het met scp naar de kali machine:
+
+```bash
+scp vagrant@192.168.62.253:~/home/vagrant/capture_test.pcap .
+```
+
+#### SSH-verkeer wegfilteren
+
+Wanneer je zelf via SSH op de router zit, vervuilt je eigen verbinding de output (elke letter die je typt is een pakketje). Je filtert dit uit met de not port optie:
+
+```bash
+sudo tcpdump -i any not port 22
+```
+
+#### Alleen HTTP-verkeer van/naar de Webserver
+
+Om alleen HTTP-verkeer van/naar de webserver te capturen, gebruik je het volgende commando:
+
+```bash
+sudo tcpdump -i any host 172.30.10.10 and port 80
+[vagrant@companyrouter ~]$ sudo tcpdump -i any host 172.30.10.10 and port 80
+tcpdump: data link type LINUX_SLL2
+dropped privs to tcpdump
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144 bytes
+15:24:20.273951 eth3  In  IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [S], seq 2222187697, win 64240, options [mss 1460,sackOK,TS val 3421474802 ecr 0,nop,wscale 5], length 0
+15:24:20.273980 eth2  Out IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [S], seq 2222187697, win 64240, options [mss 1460,sackOK,TS val 3421474802 ecr 0,nop,wscale 5], length 0
+15:24:20.274217 eth2  In  IP 172.30.10.10.http > 172.30.20.123.54104: Flags [S.], seq 4223126026, ack 2222187698, win 65160, options [mss 1460,sackOK,TS val 1348158462 ecr 3421474802,nop,wscale 7], length 0
+15:24:20.274225 eth3  Out IP 172.30.10.10.http > 172.30.20.123.54104: Flags [S.], seq 4223126026, ack 2222187698, win 65160, options [mss 1460,sackOK,TS val 1348158462 ecr 3421474802,nop,wscale 7], length 0
+15:24:20.274340 eth3  In  IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 1, win 2008, options [nop,nop,TS val 3421474803 ecr 1348158462], length 0
+15:24:20.274346 eth2  Out IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 1, win 2008, options [nop,nop,TS val 3421474803 ecr 1348158462], length 0
+15:24:20.274406 eth3  In  IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [P.], seq 1:85, ack 1, win 2008, options [nop,nop,TS val 3421474803 ecr 1348158462], length 84: HTTP: GET / HTTP/1.1
+15:24:20.274409 eth2  Out IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [P.], seq 1:85, ack 1, win 2008, options [nop,nop,TS val 3421474803 ecr 1348158462], length 84: HTTP: GET / HTTP/1.1
+15:24:20.274580 eth2  In  IP 172.30.10.10.http > 172.30.20.123.54104: Flags [.], ack 85, win 509, options [nop,nop,TS val 1348158463 ecr 3421474803], length 0
+15:24:20.274592 eth3  Out IP 172.30.10.10.http > 172.30.20.123.54104: Flags [.], ack 85, win 509, options [nop,nop,TS val 1348158463 ecr 3421474803], length 0
+15:24:20.274917 eth2  In  IP 172.30.10.10.http > 172.30.20.123.54104: Flags [P.], seq 1:467, ack 85, win 509, options [nop,nop,TS val 1348158463 ecr 3421474803], length 466: HTTP: HTTP/1.1 301 Moved Permanently
+15:24:20.274927 eth3  Out IP 172.30.10.10.http > 172.30.20.123.54104: Flags [P.], seq 1:467, ack 85, win 509, options [nop,nop,TS val 1348158463 ecr 3421474803], length 466: HTTP: HTTP/1.1 301 Moved Permanently
+15:24:20.275031 eth3  In  IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 467, win 2003, options [nop,nop,TS val 3421474803 ecr 1348158463], length 0
+15:24:20.275035 eth2  Out IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 467, win 2003, options [nop,nop,TS val 3421474803 ecr 1348158463], length 0
+15:24:20.275256 eth3  In  IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [F.], seq 85, ack 467, win 2003, options [nop,nop,TS val 3421474804 ecr 1348158463], length 0
+15:24:20.275261 eth2  Out IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [F.], seq 85, ack 467, win 2003, options [nop,nop,TS val 3421474804 ecr 1348158463], length 0
+15:24:20.275398 eth2  In  IP 172.30.10.10.http > 172.30.20.123.54104: Flags [F.], seq 467, ack 86, win 509, options [nop,nop,TS val 1348158464 ecr 3421474804], length 0
+15:24:20.275401 eth3  Out IP 172.30.10.10.http > 172.30.20.123.54104: Flags [F.], seq 467, ack 86, win 509, options [nop,nop,TS val 1348158464 ecr 3421474804], length 0
+15:24:20.275487 eth3  In  IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 468, win 2003, options [nop,nop,TS val 3421474804 ecr 1348158464], length 0
+15:24:20.275495 eth2  Out IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 468, win 2003, options [nop,nop,TS val 3421474804 ecr 1348158464], length 0
+```
+
 
 Interfaces companyrouter:
 
@@ -190,7 +290,7 @@ We veranderen de configuratie van dit:
 ```conf
 options {
     directory "/var/bind";
-    allow-transfer { any; };  # ← DIT IS HET PROBLEEM
+    allow-transfer { any; };  # ← Dit moeten we aanpassen
     listen-on { any; };
     listen-on-v6 { any; };
     recursion yes;
