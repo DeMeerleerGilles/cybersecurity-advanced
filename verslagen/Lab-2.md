@@ -79,91 +79,144 @@ flatpak:x:992:990:Flatpak system helper:/:/usr/sbin/nologin
 Ik heb een nmap default scan uitgevoerd op alle machines in het netwerk met het commando:
 
 ```bash
-[vagrant@web ~]$ nmap -v 172.30.0.0/24
-Starting Nmap 7.92 ( https://nmap.org ) at 2025-10-14 11:21 UTC
-Initiating Ping Scan at 11:21
-Scanning 256 hosts [2 ports/host]
-Completed Ping Scan at 11:21, 2.92s elapsed (256 total hosts)
-Initiating Parallel DNS resolution of 4 hosts. at 11:21
-Completed Parallel DNS resolution of 4 hosts. at 11:21, 0.00s elapsed
-Nmap scan report for 172.30.0.0 [host down]
-Nmap scan report for 172.30.0.1 [host down]
-...
-Nmap scan report for 172.30.0.255 [host down]
-Initiating Connect Scan at 11:21
+┌──(vagrant㉿red)-[~]
+└─$ nmap -v 172.30.20.0/24
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-04 04:44 EST
+Initiating Ping Scan at 04:44
+Scanning 256 hosts [4 ports/host]
+Completed Ping Scan at 04:45, 3.55s elapsed (256 total hosts)
+Initiating Parallel DNS resolution of 4 hosts. at 04:45
+Completed Parallel DNS resolution of 4 hosts. at 04:45, 0.00s elapsed
+Nmap scan report for 172.30.20.0 [host down]
+Nmap scan report for 172.30.20.1 [host down]
+Nmap scan report for 172.30.20.2 [host down]
+Nmap scan report for 172.30.20.3 [host down]
+Nmap scan report for 172.30.20.255 [host down]
+Initiating SYN Stealth Scan at 04:45
 Scanning 4 hosts [1000 ports/host]
-Discovered open port 22/tcp on 172.30.0.4
-Discovered open port 22/tcp on 172.30.0.10
-Discovered open port 111/tcp on 172.30.0.10
-Discovered open port 22/tcp on 172.30.0.15
-Discovered open port 22/tcp on 172.30.0.123
-Discovered open port 53/tcp on 172.30.0.4
-Discovered open port 80/tcp on 172.30.0.10
-Discovered open port 3306/tcp on 172.30.0.15
-Discovered open port 8000/tcp on 172.30.0.10
-Completed Connect Scan against 172.30.0.10 in 0.42s (3 hosts left)
-Completed Connect Scan against 172.30.0.15 in 0.42s (2 hosts left)
-Completed Connect Scan against 172.30.0.4 in 0.43s (1 host left)
-Completed Connect Scan at 11:21, 0.44s elapsed (4000 total ports)
-Nmap scan report for 172.30.0.4
-Host is up (0.0014s latency).
-Not shown: 998 closed tcp ports (conn-refused)
+Discovered open port 3306/tcp on 172.30.20.15
+Discovered open port 53/tcp on 172.30.20.4
+Discovered open port 22/tcp on 172.30.20.15
+Discovered open port 22/tcp on 172.30.20.123
+Discovered open port 111/tcp on 172.30.20.254
+Discovered open port 22/tcp on 172.30.20.4
+Discovered open port 22/tcp on 172.30.20.254
+Discovered open port 2222/tcp on 172.30.20.254
+Completed SYN Stealth Scan against 172.30.20.15 in 0.16s (3 hosts left)
+Completed SYN Stealth Scan against 172.30.20.123 in 0.16s (2 hosts left)
+Completed SYN Stealth Scan against 172.30.20.4 in 0.17s (1 host left)
+Completed SYN Stealth Scan at 04:45, 0.17s elapsed (4000 total ports)
+Nmap scan report for 172.30.20.4
+Host is up (0.00033s latency).
+Not shown: 998 closed tcp ports (reset)
 PORT   STATE SERVICE
 22/tcp open  ssh
 53/tcp open  domain
 
-Nmap scan report for 172.30.0.10
-Host is up (0.0023s latency).
-Not shown: 996 closed tcp ports (conn-refused)
-PORT     STATE SERVICE
-22/tcp   open  ssh
-80/tcp   open  http
-111/tcp  open  rpcbind
-8000/tcp open  http-alt
-
-Nmap scan report for 172.30.0.15
-Host is up (0.0022s latency).
-Not shown: 998 closed tcp ports (conn-refused)
+Nmap scan report for 172.30.20.15
+Host is up (0.00064s latency).
+Not shown: 998 closed tcp ports (reset)
 PORT     STATE SERVICE
 22/tcp   open  ssh
 3306/tcp open  mysql
 
-Nmap scan report for 172.30.0.123
-Host is up (0.0012s latency).
-Not shown: 999 closed tcp ports (conn-refused)
+Nmap scan report for 172.30.20.123
+Host is up (0.00065s latency).
+Not shown: 999 closed tcp ports (reset)
 PORT   STATE SERVICE
 22/tcp open  ssh
 
-Read data files from: /usr/bin/../share/nmap
-Nmap done: 256 IP addresses (4 hosts up) scanned in 3.48 seconds
+Nmap scan report for 172.30.20.254
+Host is up (0.00020s latency).
+Not shown: 997 closed tcp ports (reset)
+PORT     STATE SERVICE
+22/tcp   open  ssh
+111/tcp  open  rpcbind
+2222/tcp open  EtherNetIP-1
+
+Read data files from: /usr/share/nmap
+Nmap done: 256 IP addresses (4 hosts up) scanned in 3.82 seconds
+           Raw packets sent: 6021 (252.748KB) | Rcvd: 4012 (160.620KB)
+```
+
+Banner grab scan:
+
+```bash
+┌──(vagrant㉿red)-[~]
+└─$ nmap -sV -p 22,53,80,3306,8000 172.30.20.0/24
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-04 04:48 EST
+Nmap scan report for 172.30.20.4
+Host is up (0.00062s latency).
+
+PORT     STATE  SERVICE  VERSION
+22/tcp   open   ssh      OpenSSH 9.3 (protocol 2.0)
+53/tcp   open   domain   ISC BIND 9.18.37
+80/tcp   closed http
+3306/tcp closed mysql
+8000/tcp closed http-alt
+
+Nmap scan report for 172.30.20.15
+Host is up (0.00046s latency).
+
+PORT     STATE  SERVICE  VERSION
+22/tcp   open   ssh      OpenSSH 9.3 (protocol 2.0)
+53/tcp   closed domain
+80/tcp   closed http
+3306/tcp open   mysql    MariaDB 5.5.5-10.11.11
+8000/tcp closed http-alt
+
+Nmap scan report for 172.30.20.123
+Host is up (0.00068s latency).
+
+PORT     STATE  SERVICE  VERSION
+22/tcp   open   ssh      OpenSSH 9.3 (protocol 2.0)
+53/tcp   closed domain
+80/tcp   closed http
+3306/tcp closed mysql
+8000/tcp closed http-alt
+
+Nmap scan report for 172.30.20.254
+Host is up (0.00040s latency).
+
+PORT     STATE  SERVICE  VERSION
+22/tcp   open   ssh      OpenSSH 9.2p1 Debian 2+deb12u3 (protocol 2.0)
+53/tcp   closed domain
+80/tcp   closed http
+3306/tcp closed mysql
+8000/tcp closed http-alt
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 256 IP addresses (4 hosts up) scanned in 9.87 seconds
 ```
 
 Scan op de database server:
 
 ```bash
-[vagrant@web ~]$ nmap -sV -sC 172.30.0.15
-Starting Nmap 7.92 ( https://nmap.org ) at 2025-10-14 11:33 UTC
-Nmap scan report for 172.30.0.15
-Host is up (0.00064s latency).
-Not shown: 998 closed tcp ports (conn-refused)
+┌──(vagrant㉿red)-[~]
+└─$ nmap -sV -sC 172.30.20.15
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-04 04:47 EST
+Nmap scan report for 172.30.20.15
+Host is up (0.00068s latency).
+Not shown: 998 closed tcp ports (reset)
 PORT     STATE SERVICE VERSION
 22/tcp   open  ssh     OpenSSH 9.3 (protocol 2.0)
 | ssh-hostkey: 
 |   256 a6:f5:68:ed:ff:72:b1:c8:50:a0:62:ad:57:fa:08:2d (ECDSA)
 |_  256 75:99:6b:07:14:ee:04:6b:20:a8:05:60:32:14:03:d8 (ED25519)
-3306/tcp open  mysql   MySQL 5.5.5-10.11.11-MariaDB
+3306/tcp open  mysql   MariaDB 5.5.5-10.11.11
 | mysql-info: 
 |   Protocol: 10
 |   Version: 5.5.5-10.11.11-MariaDB
-|   Thread ID: 6
+|   Thread ID: 4
 |   Capabilities flags: 63486
-|   Some Capabilities: IgnoreSpaceBeforeParenthesis, Support41Auth, Speaks41ProtocolNew, DontAllowDatabaseTableColumn, Speaks41ProtocolOld, SupportsTransactions, IgnoreSigpipes, SupportsCompression, ConnectWithDatabase, SupportsLoadDataLocal, FoundRows, LongColumnFlag, InteractiveClient, ODBCClient, SupportsMultipleStatments, SupportsMultipleResults, SupportsAuthPlugins
+|   Some Capabilities: FoundRows, LongColumnFlag, IgnoreSpaceBeforeParenthesis, ODBCClient, Speaks41ProtocolNew, Support41Auth, Speaks41ProtocolOld, InteractiveClient, DontAllowDatabaseTableColumn, ConnectWithDatabase, SupportsTransactions, IgnoreSigpipes, SupportsLoadDataLocal, SupportsCompression, SupportsMultipleResults, SupportsMultipleStatments, SupportsAuthPlugins
 |   Status: Autocommit
-|   Salt: ib2qaq6W6F>D{]Cs=tPt
+|   Salt: 48^San)|Vy!2w$K+6l@9
 |_  Auth Plugin Name: mysql_native_password
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 0.55 second
+Nmap done: 1 IP address (1 host up) scanned in 5.79 seconds
 ```
 
 Er draait een MySQL 5.5.5-10.11.11-MariaDB server op de database server.
@@ -175,7 +228,27 @@ Try to search for a nmap script to brute-force the database. Another (even easie
 Ik gebruikte het volgende commando:
 
 ```bash
-[vagrant@web ~]$ hydra -L /usr/share/wordlists/nmap.lst -P /usr/share/wordlists/rockyou.txt -f -o /tmp/hydra_results.txt -u
+┌──(vagrant㉿red)-[~]
+└─$ nmap -p 3306 --script mysql-brute --script-args userdb=/usr/share/wordlists/nmap.lst,passdb=/usr/share/wordlists/rockyou.txt 172.30.20.15
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-04 04:55 EST
+Nmap scan report for 172.30.20.15
+Host is up (0.00077s latency).
+
+PORT     STATE SERVICE
+3306/tcp open  mysql
+| mysql-brute: 
+|   Accounts: No valid accounts found
+|   Statistics: Performed 201204 guesses in 247 seconds, average tps: 840.2
+|_  ERROR: The service seems to have failed or is heavily firewalled...
+
+Nmap done: 1 IP address (1 host up) scanned in 263.89 seconds                                                              
+```
+Het lukt niet om in te breken op de database server met de gebruikte lijsten.
+
+Ik probeerde ook met hydra:
+
+```bash
+hydra -l root -P /usr/share/wordlists/rockyou.txt 172.30.20.15 mysql
 ```
 
 Proberen om te ssh verbinden van de red machine naar een andere machine met vagrant/vagrant:
@@ -202,63 +275,58 @@ Dit is mogelijk.
 Kijken welke versie er op de webserver draait:
 
 ```bash
-└─$ nmap -sV -p80,443 172.30.0.10  
-curl -I http://172.30.0.10/
+┌──(vagrant㉿red)-[~]
+└─$ nmap -sV -p80,443 172.30.10.10  
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-04 05:02 EST
+Nmap scan report for 172.30.10.10
+Host is up (0.00084s latency).
 
-Starting Nmap 7.95 ( https://nmap.org ) at 2025-10-20 08:30 EDT
-Nmap scan report for 172.30.0.10
-Host is up (0.0011s latency).
-
-PORT    STATE  SERVICE VERSION
-80/tcp  open   http    Apache httpd 2.4.62 ((AlmaLinux))
-443/tcp closed https
+PORT    STATE SERVICE  VERSION
+80/tcp  open  http     Apache httpd 2.4.62 ((AlmaLinux) OpenSSL/3.5.1)
+443/tcp open  ssl/http Apache httpd 2.4.62 ((AlmaLinux) OpenSSL/3.5.1)
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 6.61 seconds
-HTTP/1.1 200 OK
-Date: Mon, 20 Oct 2025 12:30:31 GMT
-Server: Apache/2.4.62 (AlmaLinux)
-Last-Modified: Fri, 26 Sep 2025 14:18:11 GMT
-ETag: "58f-63fb4f4a1330a"
-Accept-Ranges: bytes
-Content-Length: 1423
-Content-Type: text/html; charset=UTF-8
+Nmap done: 1 IP address (1 host up) scanned in 12.47 seconds
 ```
 
-De webserver draait Apache httpd 2.4.62 ((AlmaLinux)).
+De webserver draait Apache httpd 2.4.62 op (AlmaLinux).
 
-### Gebruik -sC optie met nmap — wat is het?
+### Gebruik -sC optie met nmap, wat is het?
 
--sC voert de default NSE scripts uit (Nmap Scripting Engine) — een set van scripts die vaak basale informatie en checks uitvoeren (vulnerability checks, banners, http-enum, etc.). Het is handig voor een snelle extra laag informatieverzameling.
+-sC voert de default NSE scripts uit (Nmap Scripting Engine) een set van scripts die vaak basale informatie en checks uitvoeren (vulnerability checks, banners, http-enum, etc.). Het is handig voor een snelle extra laag informatieverzameling.
 
 ```bash
-nmap -sV -sC -p80,443 172.30.0.10
-──(vagrant㉿red)-[~]
-└─$ nmap -sV -sC -p80,443 172.30.0.10
-Starting Nmap 7.95 ( https://nmap.org ) at 2025-10-20 08:45 EDT
-Nmap scan report for 172.30.0.10
-Host is up (0.0010s latency).
+┌──(vagrant㉿red)-[~]
+└─$ nmap -sV -sC -p80,443 172.30.10.10
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-01-04 05:09 EST
+Nmap scan report for 172.30.10.10
+Host is up (0.00079s latency).
 
-PORT    STATE  SERVICE VERSION
-80/tcp  open   http    Apache httpd 2.4.62 ((AlmaLinux))
+PORT    STATE SERVICE  VERSION
+80/tcp  open  http     Apache httpd 2.4.62 ((AlmaLinux) OpenSSL/3.5.1)
+|_http-server-header: Apache/2.4.62 (AlmaLinux) OpenSSL/3.5.1
+|_http-title: Did not follow redirect to https://www.cybersec.internal/
+443/tcp open  ssl/http Apache httpd 2.4.62 ((AlmaLinux) OpenSSL/3.5.1)
+|_http-title: Welcome to Example Test Environment
 | http-methods: 
 |_  Potentially risky methods: TRACE
-|_http-title: Welcome to Example Test Environment
-|_http-server-header: Apache/2.4.62 (AlmaLinux)
-443/tcp closed https
+| ssl-cert: Subject: commonName=www.cybersec.internal
+| Subject Alternative Name: DNS:www.cybersec.internal, DNS:services.cybersec.internal
+| Not valid before: 2025-12-28T11:00:50
+|_Not valid after:  2028-04-01T11:00:50
+|_http-server-header: Apache/2.4.62 (AlmaLinux) OpenSSL/3.5.1
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 6.91 seconds
+Nmap done: 1 IP address (1 host up) scanned in 12.71 seconds
 ```
 
-De output toont dat de webserver mogelijk risicovolle HTTP-methoden zoals TRACE toestaat, wat een potentiële beveiligingsrisico kan zijn.
+De output toont dat de webserver mogelijk risicovolle HTTP-methoden zoals TRACE toestaat, wat een potentiëel beveiligingsrisico kan zijn.
 
 ## Netwerksegmentatie
 
 Wat wordt bedoeld met de term attack vector?
 
-Een attack vector is het pad of de methode waarmee een aanvaller toegang kan krijgen tot een systeem of netwerk.
-Door het netwerk op te splitsen in segmenten en verkeer tussen die zones te beperken, verklein je het aantal mogelijke aanvalspaden.
+Een attack vector is het pad of de methode waarmee een aanvaller toegang kan krijgen tot een systeem of netwerk. Door het netwerk op te splitsen in segmenten en verkeer tussen die zones te beperken, verklein je het aantal mogelijke aanvalspaden.
 
 Is er al network segmentation gedaan op het huidige (interne) bedrijfennetwerk?
 
@@ -287,68 +355,61 @@ sudo tee /etc/nftables.conf > /dev/null <<'EOF'
 flush ruleset
 
 #
-# Zone definitions
+# Zone definitions 
 #
 define WAN = "eth0"
 define EXTERNAL = "eth1"
-define INTERNAL = "eth2"
+define DMZ_IF = "eth2"
+define INT_IF = "eth3"
 
 define fake_internet = 192.168.62.0/24
 define dmz_net = 172.30.10.0/24
 define intranet_net = 172.30.20.0/24
 
-#
-# FILTER TABLE
-#
+# Specifieke IP's voor strakkere beveiliging
+define webserver = 172.30.10.10
+define dns_server = 172.30.20.4
+
 table inet filter {
     chain input {
         type filter hook input priority 0; policy drop;
 
-        # Allow loopback
         iif lo accept
+        ct state established,related accept
 
-        # Allow established connections
-        ct state { established, related } accept
-
-        # Allow ICMP (ping)
+        # ICMP toestaan (handig voor troubleshooting)
         ip protocol icmp accept
 
-        # Allow SSH from internal network and DMZ
-        ip saddr { $intranet_net, $dmz_net } tcp dport 22 accept
-
-        # Optional: allow SSH from fake internet (Kali) for testing
-        ip saddr 192.168.62.110 tcp dport 22 accept
+        # SSH beheer (beperkt tot Intranet en Kali voor testen)
+        ip saddr { $intranet_net, 192.168.62.110 } tcp dport 22 accept
     }
 
     chain forward {
         type filter hook forward priority 0; policy drop;
 
-        # Allow established connections
-        ct state { established, related } accept
+        # 1. Toestaan van bestaande verbindingen (Cruciaal!)
+        ct state established,related accept
 
-        # LAN → WAN
-        iifname $INTERNAL oifname $WAN accept
+        # 2. Intranet -> WAN & External (Internet toegang)
+        iifname $INT_IF oifname { $WAN, $EXTERNAL } accept
 
-        # LAN ↔ DMZ
-        ip saddr $intranet_net ip daddr $dmz_net accept
-        ip saddr $dmz_net ip daddr $intranet_net accept
+        # 3. Intranet -> DMZ (Volledig beheer)
+        iifname $INT_IF oifname $DMZ_IF accept
 
-        # Fake internet → DMZ webserver
-        ip saddr $fake_internet ip daddr $dmz_net tcp dport {80,443} accept
-        ip saddr $fake_internet ip daddr $dmz_net icmp type echo-request accept
+        # 4. DMZ -> Intranet (Beperk dit! Meestal alleen naar DB of SIEM)
+        # Voor nu conform jouw script (open), maar overweeg dit te beperken:
+        iifname $DMZ_IF oifname $INT_IF accept
 
-        # Fake internet → Internal DNS
-        ip saddr $fake_internet ip daddr $intranet_net udp dport 53 accept
-        ip saddr $fake_internet ip daddr $intranet_net tcp dport 53 accept
+        # 5. Fake internet -> DMZ Webserver
+        ip saddr $fake_internet ip daddr $webserver tcp dport { 80, 443, 8000, 9200 } accept
+        ip saddr $fake_internet ip daddr $webserver icmp type echo-request accept
 
-        # Fake internet → DMZ optional services (Flask / Java)
-        ip saddr $fake_internet ip daddr $dmz_net tcp dport {8000,9200} accept
+        # 6. Fake internet -> Specifieke DNS server (Poort 53)
+        ip saddr $fake_internet ip daddr $dns_server udp dport 53 accept
+        ip saddr $fake_internet ip daddr $dns_server tcp dport 53 accept
 
-        # Allow return traffic
-        ip saddr $dmz_net ip daddr $fake_internet accept
-
-        # Drop all other fake internet traffic
-        ip saddr $fake_internet drop
+        # 7. DMZ naar buiten (voor updates etc.)
+        iifname $DMZ_IF oifname { $WAN, $EXTERNAL } accept
     }
 
     chain output {
@@ -356,22 +417,12 @@ table inet filter {
     }
 }
 
-#
-# NAT TABLE
-#
 table ip nat {
-    chain prerouting {
-        type nat hook prerouting priority -100;
-    }
-
     chain postrouting {
         type nat hook postrouting priority 100;
 
-        # Masquerade all traffic going to WAN
-        oifname $WAN ip saddr { $intranet_net, $dmz_net } masquerade
-
-        # Masquerade fake_internet → DMZ
-        oifname $INTERNAL ip saddr $fake_internet ip daddr $dmz_net masquerade
+        # Masquerade alles wat naar het internet (WAN/External) gaat
+        oifname { $WAN, $EXTERNAL } masquerade
     }
 }
 EOF
@@ -400,6 +451,19 @@ sudo sysctl -w net.ipv4.ip_forward=1
 echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 ```
+
+Nu teste ik de connectiviteit van de verschillende hosts met een scriptje:
+
+Vanaf de router:
+![alt text](<img/Schermafbeelding 2026-01-04 120158.png>)
+
+Vanaf de webserver (DMS):
+![alt text](<img/Schermafbeelding 2026-01-04 121243.png>)
+
+Vanaf de database server (Internal LAN):
+![alt text](<img/Schermafbeelding 2026-01-04 122146.png>)
+
+De SIEM en windows stonden uit tijdens de tests ivm resources.
 
 ### Poortstatussen in nmap
 
