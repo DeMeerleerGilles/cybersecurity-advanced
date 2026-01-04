@@ -1,11 +1,15 @@
 # Verslag labo 3: Secure Shell (SSH)
 
-## Uitwerking labo
-
-### SSH Client config
+## SSH Client config
 
 Ik begon met het kopiëren van de publieke sleutel van mijn laptop naar alle verschillende VMs met het commando:
 type $env:USERPROFILE\.ssh\id_rsa.pub | ssh vagrant@172.30.10.10 "cat >> .ssh/authorized_keys"
+
+### What files are transferred to what machines?
+
+De publieke sleutel van mijn laptop (~/.ssh/id_rsa.pub) is gekopieerd naar de authorized_keys bestanden van alle machines in het netwerk (webserver, database, dns, employee workstation, companyrouter).
+
+De private key (~/.ssh/id_rsa) blijft op mijn laptop staan en wordt niet gekopieerd. Als deze sleutel zou lekken, zou iedereen die deze heeft toegang kunnen krijgen tot de machines waar de publieke sleutel is toegevoegd.
 
 ```bash
 ssh-copy-id -i ~/.ssh/id_rsa.pub vagrant@172.30.20.50
@@ -15,7 +19,7 @@ cat ~/.ssh/id_rsa.pub | ssh vagrant@172.30.20.15 "mkdir -p ~/.ssh && chmod 700 ~
 cat ~/.ssh/id_rsa.pub | ssh vagrant@172.30.20.123 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
 
-Opmerking: later heb ik ook de public key van de companyrouter zelf gekopieerd naar dezelfde hosts zodat de router zonder wachtwoord naar de interne machines kan inloggen (handig voor automatische taken of wanneer de router tunnel-initiatie moet doen).
+Opmerking: later heb ik ook de public key van de companyrouter zelf gekopieerd naar dezelfde hosts zodat de router zonder wachtwoord naar de interne machines kan inloggen.
 
 In de ssh/config van mijn windows laptop heb ik het volgende gezet zodat ik niet van alle machines het ip elke keer moest opzoeken:
 
@@ -85,6 +89,9 @@ ssh web
 ssh companyrouter
 ...
 ```
+
+Indien we dit nog extra veilig willen maken kunnen we een nieuwe gebruiker installen naast de vagrant gebruiker. Ik schakelde ook de wachtwoord authenticatie uit in /etc/ssh/sshd_config door PasswordAuthentication op no te zetten.
+
 
 ### SSH port forwarding:
 
