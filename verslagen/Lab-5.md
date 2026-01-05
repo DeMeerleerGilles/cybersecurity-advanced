@@ -282,3 +282,10 @@ Tue 2025-12-23 09:51:12 UTC 4min 54s left Tue 2025-12-23 09:46:12 UTC 5s ago    
 
 Borg compact verwijdert onnodige data uit de repository om ruimte te besparen.
 
+A brain teaser: can I use tools like borg to backup an active database? Why (not)? Read https://borgbackup.readthedocs.io/en/stable/quickstart.html#important-note-about-files-changing-during-the-backup-process for more information. Should I take any extra measures to do this safely?
+
+There is a tool that has been built on top of borg called borgmatic. What does it do? Could it be useful to you? Why (not)?
+
+Borg is geen ideale tool om een actieve database te backuppen omdat de data tijdens het backup-proces kan veranderen, wat kan leiden tot inconsistente backups. Extra maatregelen zoals het gebruik van database-specifieke backup tools of het tijdelijk stilleggen van de database kunnen nodig zijn om een betrouwbare backup te garanderen. 
+
+Borgmatic is een wrapper rond borg die het backup-proces vereenvoudigt door configuratiebestanden en automatisering te bieden. Het kan nuttig zijn voor gebruikers die regelmatig backups willen maken zonder de complexiteit van borg zelf te hoeven beheren, vooral in omgevingen waar consistentie en eenvoud belangrijk zijn.
