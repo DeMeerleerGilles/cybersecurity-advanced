@@ -95,10 +95,25 @@ Indien we dit nog extra veilig willen maken kunnen we een nieuwe gebruiker insta
 
 ### SSH port forwarding:
 
-Webserver forwarden naar poort 8080 van de host.
+Webserver bekijken op je laptop Je stuurt poort 8080 op je laptop door naar poort 80 van de webserver via de router.
 
 ```bash
-ssh companyrouter -L 8080:172.30.10.10:80
+# Formule: ssh -L [lokale_poort]:[doel_ip]:[doel_poort] [bastion_host]
+ssh -L 8080:172.30.10.10:80 companyrouter
+```
+
+Database bereikbaar maken op de router Iemand op het 'fake internet' kan dan verbinden met de router op poort 3306 en wordt doorgezet naar de DB.
+
+```bash
+# Formule: ssh -R [poort_op_router]:[doel_ip]:[doel_poort] [bastion_host]
+ssh -R 3306:172.30.20.15:3306 companyrouter
+```
+
+Je wilt je laptop zo instellen dat al je browserverkeer via de router loopt, zodat je alle interne IP-adressen direct kunt intypen.
+
+```bash
+ssh -D 9090 companyrouter
+# Dan in je browser de proxy instellen op localhost:9090
 ```
 
 ## SSH Port Forwarding vragen

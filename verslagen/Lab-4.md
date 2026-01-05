@@ -1,10 +1,10 @@
 # Verslag labo 4: Honeypots
 
-## What is a honeypot?
+## Wat is een honeypot?
 
-A honeypot is a deliberately vulnerable or attractive system, service or resource deployed to detect, study, and distract attackers. It appears as a real target to an adversary but is instrumented to record attacker actions, techniques and indicators of compromise without providing legitimate business value.
+Een honeypot is een beveiligingsmechanisme dat is ontworpen om aanvallers aan te trekken, te detecteren en te analyseren door een ogenschijnlijk kwetsbaar of waardevol systeem, dienst of resource aan te bieden. Het doel van een honeypot is om kwaadwillende activiteiten te lokken en te observeren zonder dat deze daadwerkelijk schade kunnen aanrichten aan het echte netwerk of systeem.
 
-## LABO
+## Uitwerking LABO
 
 Why is companyrouter, in this environment, an interesting device to configure with a SSH honeypot? What could be a good argument to NOT configure the router with a honeypot service?
 
@@ -30,9 +30,9 @@ sudo nano /etc/ssh/sshd_config
 
 Nu zoeken we de lijn waarop de poort gedeclareerd wordt. Deze staat in commentaar dus we halen de hash weg en maken er 2222 van. Hierna paste ik deze poort ook nog aan in de ssh config van mijn gebruiker op mijn host zodat het commando ssh companyrouter meteen op de juiste poort probeert te verbinden.
 
-### Installeren van Crowie
+### Installeren van cowrie
 
-Hierna installeerde ik Crowie op de VM, voor het gemak deed ik dit via docker.
+Hierna installeerde ik cowrie op de VM, voor het gemak deed ik dit via docker.
 
 Ik moest hiervoor uiteraard eerst docker installeren op de VM, dit deed ik met de volgende commandos:
 
@@ -52,7 +52,7 @@ Gebruiker toevoegen aan de docker groep zodat er geen sudo meer nodig is:
 sudo usermod -aG docker vagrant
 ```
 
-Nu kunnen we beginnen aan de crowie installatie.
+Nu kunnen we beginnen aan de cowrie installatie.
 
 ```bash
 sudo mkdir /opt/cowrie
@@ -82,7 +82,7 @@ Om de container automatisch te laten starten bij het opstarten van de VM:
 sudo docker update --restart unless-stopped cowrie
 ```
 
-Crowie draait nu op de ssh poort. We kunnen verbinding maken met de router.
+cowrie draait nu op de ssh poort. We kunnen verbinding maken met de router.
 
 via het ssh commando: `ssh root@192.168.62.253`
 
