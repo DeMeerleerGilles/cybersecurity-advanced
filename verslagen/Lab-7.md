@@ -221,3 +221,21 @@ onder Computer Configuration -> Administrative Templates -> Windows Components -
 We zien deze logs nu verschijnen onder threat hunting in het wazuh dashboard:
 
 ![alt text](<img/Schermafbeelding 2025-12-30 103135.png>)
+
+We kunnen logs creëren door een powershell script uit te voeren op de windows client:
+
+```powershell
+PS C:\Users\Administrator> for ($i=0; $i -lt 10; $i++) { Write-Output "This is log entry number $i" }
+This is log entry number 0
+This is log entry number 1
+This is log entry number 2
+This is log entry number 3
+This is log entry number 4
+This is log entry number 5
+This is log entry number 6
+This is log entry number 7
+This is log entry number 8
+This is log entry number 9
+```
+
+Als we nu kijken in de threat hunting logs in het dashboard zien we deze verschijnen.
