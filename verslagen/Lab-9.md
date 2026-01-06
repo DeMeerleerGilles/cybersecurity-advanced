@@ -109,7 +109,8 @@ Ik veranderde de volgende regel:
 Naar:
 
 ```conf
-push "route 172.30.0.0 255.255.0.0"
+push "route 172.30.10.0 255.255.255.0"
+push "route 172.30.20.0 255.255.255.0"
 ```
 
 Voor topology haalde ik ook nog de punt komma weg, dit zorgt dat clients een IP adres krijgen uit hetzelfde subnet als de server:
@@ -258,7 +259,7 @@ PING 172.30.20.15 (172.30.20.15) 56(84) bytes of data.
 rtt min/avg/max/mdev = 0.921/1.070/1.220/0.122 ms
 ```
 
-In wireshark zien we dit dan als UDP verkeer.
+In wireshark zien we dit dan als openvpn verkeer.
 
 
-![alt text](<img/Schermafbeelding 2026-01-01 110905.png>)
+![alt text](<img/Schermafbeelding 2026-01-06 160158.png>)
