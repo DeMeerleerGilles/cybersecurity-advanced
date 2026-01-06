@@ -28,10 +28,4 @@ IP-adressen per toestel:
 | remote-employee   | 172.10.10.123  |
 
 
-op de remote-employee:
-sudo ip route add 172.30.0.0/16 via 172.10.10.254
-
-
-sudo ip route del default via 10.0.2.2
-sudo ip route add 172.30.20.0/24 via 172.30.10.254 dev eth1
-sudo ip route add 172.10.10.0/24 via 172.30.10.254 dev eth1
+SIEM wachtwoord: TzGHeQOZyZ0rmcBL?43oykJyEFuzfxmP

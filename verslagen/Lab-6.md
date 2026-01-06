@@ -310,16 +310,20 @@ sudo vi /etc/httpd/conf.d/ssl-tls13.conf
 Met de volgende inhoud:
 
 ```apache
+# Verplaats deze regels naar de bovenkant (buiten de VirtualHost)
+SSLSessionCache shmcb:/var/cache/httpd/ssl_scache(512000)
+SSLSessionCacheTimeout 300
+Listen 443 https
+
 <VirtualHost *:443>
     ServerName www.cybersec.internal
 
     SSLEngine on
-    SSLCertificateFile /etc/ssl/certs/webserver_tls13.crt
-    SSLCertificateKeyFile /etc/ssl/private/webserver_tls13.key
+    SSLCertificateFile /etc/pki/tls/certs/webserver_tls13.crt
+    SSLCertificateKeyFile /etc/pki/tls/private/webserver_tls13.key
 
-    SSLProtocol TLSv1.3
-    # Cipher suites voor TLS 1.3 worden automatisch gekozen
-    # Je hoeft SSLCipherSuite niet aan te passen tenzij je wil beperken
+    # TLS configuratie: TLSv1.2 + TLSv1.3
+    SSLProtocol -all TLSv1.3
 
     ProxyPass /cmd http://localhost:8000/
     ProxyPassReverse /cmd http://localhost:8000/
@@ -347,25 +351,145 @@ We kunnen nu controleren of TLS 1.3 actief is met het volgende commando:
 [vagrant@web ~]$ openssl s_client -connect www.cybersec.internal:443 -tls1_3
 Connecting to 127.0.2.1
 CONNECTED(00000003)
-40C7904F467F0000:error:0A00042E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version:ssl/record/rec_layer_s3.c:916:SSL alert number 70
+depth=0 CN=www.cybersec.internal
+verify error:num=20:unable to get local issuer certificate
+verify return:1
+depth=0 CN=www.cybersec.internal
+verify error:num=21:unable to verify the first certificate
+verify return:1
+depth=0 CN=www.cybersec.internal
+verify return:1
 ---
-no peer certificate available
+Certificate chain
+ 0 s:CN=www.cybersec.internal
+   i:C=BE, ST=Vlaanderen, L=Gent, O=HOGENT, CN=cybersec.internal
+   a:PKEY: RSA, 2048 (bit); sigalg: sha256WithRSAEncryption
+   v:NotBefore: Dec 28 13:50:05 2025 GMT; NotAfter: Apr  1 13:50:05 2028 GMT
+---
+Server certificate
+-----BEGIN CERTIFICATE-----
+MIIEjTCCAnWgAwIBAgIUEllrsujVPdc7jLhc4FcGBfcUgqIwDQYJKoZIhvcNAQEL
+BQAwXjELMAkGA1UEBhMCQkUxEzARBgNVBAgMClZsYWFuZGVyZW4xDTALBgNVBAcM
+BEdlbnQxDzANBgNVBAoMBkhPR0VOVDEaMBgGA1UEAwwRY3liZXJzZWMuaW50ZXJu
+YWwwHhcNMjUxMjI4MTM1MDA1WhcNMjgwNDAxMTM1MDA1WjAgMR4wHAYDVQQDDBV3
+d3cuY3liZXJzZWMuaW50ZXJuYWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+AoIBAQCsjGzKWm7Vq6XdDlveMbtokQur0VCYjxngfOTwmwKXZgTenGR1Iuw2E+ti
+IXjxuopFv+LNAzKhwJMtoi4VBVhaTx7x/Vd8C+JJGaWfuF2xBf/WHHUn9Fp0AbYD
+3rGtGcFsgYTNLxG3yw4MlgHLjLTU+AehUgEvl9QAVr5FA0rzWJbXNfj7DdUSZ5I5
+C4WlEKeH5PIwZveX/1cljuULUxc+yxR9dxf7/5ymEfJIpdE1HUNg9fLD4yt+qjXo
+VwB/qhXUp/bcKTaT8yhjzX+8iFtwC5EM+rq6dpzTMhdlCAMCzPP55pa2AWSqo+VV
+L02WL1GQuKPCwvXkPSNW50ARoZB/AgMBAAGjgYAwfjA8BgNVHREENTAzghV3d3cu
+Y3liZXJzZWMuaW50ZXJuYWyCGnNlcnZpY2VzLmN5YmVyc2VjLmludGVybmFsMB0G
+A1UdDgQWBBQcMf3A4gk+8hrzMMBAfZFTqwgH1jAfBgNVHSMEGDAWgBSYljRjAG4X
+hfk7uv5KS3imPIbEkTANBgkqhkiG9w0BAQsFAAOCAgEAGtVpINlyNSFnTEky71bc
+q5o1xXdIsDW1pwquwOG5BLsV68Cm51WzVgYKFX+O06wkGdVZ/xpsEtwaKOpcg6wh
+VllvN994B1nC2Y4/6xfMSgUrqlt/uDVAaGUiO9JVHOW+dWlWg2Er3uUrKKpnpaEq
+d/qhbZ1XJG9kWraRC/tlFoLvutuidUq2O6YKdUPSHw4a+RvmZZbqkf2wIEOZFkcN
+shp5G20qtMvu/Hu20Vnh2OGNiNGcNM7dc1JfHnJLCAhlDMceKzPox8UyyUfXAjKn
+YfeusWJq+yBNtXAC9CzFnbijmdF/PIaBmli0ujrStumldzlYVJNJnj8Pb7uw482A
+ri09b9KnhoEqiRQXSTfw9ffUyTRAU7t95VglPGOFw3JpnVhKh/eyVNOG25G7A2N6
+YHlCefmOAq2E29l3wVb0llZQ3TRMX5Pngsy8YVaowiZAmlSFisHvZsjNJQSyYsgY
+dSEb3acQjumNJ3rqA0y0Jpt3WEBV8xx3J8jHZOAEtvEjAXPE+tlI8TgK45Tldlor
+QORTGxQOoyZOQnQmC+dFEdeybVdNUueb95nb/I2lNT513TkHc9MaJSTg8x/uOM90
+QfajqMlaBnlWeJs9dHuCxl8Vgv8xsOlGTBCBTr6RLRUH0SOniQBuGsE+kTFv2Bgy
+xh4rHqQxP1AOD/9FhMzqui0=
+-----END CERTIFICATE-----
+subject=CN=www.cybersec.internal
+issuer=C=BE, ST=Vlaanderen, L=Gent, O=HOGENT, CN=cybersec.internal
 ---
 No client certificate CA names sent
-Negotiated TLS1.3 group: <NULL>
+Peer signing digest: SHA256
+Peer signature type: rsa_pss_rsae_sha256
+Peer Temp Key: X25519, 253 bits
 ---
-SSL handshake has read 7 bytes and written 262 bytes
-Verification: OK
+SSL handshake has read 1729 bytes and written 342 bytes
+Verification error: unable to verify the first certificate
 ---
-New, (NONE), Cipher is (NONE)
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
 Protocol: TLSv1.3
+Server public key is 2048 bit
 This TLS version forbids renegotiation.
 Compression: NONE
 Expansion: NONE
 No ALPN negotiated
 Early data was not sent
-Verify return code: 0 (ok)
+Verify return code: 21 (unable to verify the first certificate)
 ---
+---
+Post-Handshake New Session Ticket arrived:
+SSL-Session:
+    Protocol  : TLSv1.3
+    Cipher    : TLS_AES_256_GCM_SHA384
+    Session-ID: 2C6BF10FD69EE91CC0432538FF34C7C8408477270C15E86089DD4F7563DDA006
+    Session-ID-ctx:
+    Resumption PSK: D288DCF9A2DFAE1DA80E27D003ABA85CA44057F2698CF8B12A1F9C2AEF857417AFD6A953B88A486708236A7F3D99B1FA
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    TLS session ticket lifetime hint: 300 (seconds)
+    TLS session ticket:
+    0000 - 2a 78 80 03 bf 8d 1a f2-b9 3c e2 2a 4b 75 52 0f   *x.......<.*KuR.
+    0010 - 0b b3 61 a5 d2 b0 58 7a-64 d5 9b f4 d7 88 29 36   ..a...Xzd.....)6
+    0020 - 05 16 2e 8f fe a9 12 c5-ac 9d 54 89 a4 6e 31 56   ..........T..n1V
+    0030 - 4e 7d 88 f4 7e a1 91 21-e3 79 95 cd dd f2 a9 0b   N}..~..!.y......
+    0040 - 18 84 0c a0 70 e3 0b 72-93 a8 2e b9 e5 25 f9 91   ....p..r.....%..
+    0050 - 94 77 d0 41 77 e4 5a 27-92 5c d2 73 9b 63 9c ad   .w.Aw.Z'.\.s.c..
+    0060 - 4e f6 db 23 ba 19 2b 99-3a 8f bd 27 cd b8 8f 25   N..#..+.:..'...%
+    0070 - 65 7e 61 6e ce 44 b1 bb-4a e8 37 71 0f 06 f9 12   e~an.D..J.7q....
+    0080 - f0 57 6c 88 32 06 35 a9-79 16 7f 3a 02 e5 f3 ff   .Wl.2.5.y..:....
+    0090 - b4 d1 6a 19 fa c4 00 9b-94 b6 3b e1 af 2b c4 ee   ..j.......;..+..
+    00a0 - 75 bf f7 c4 5b 81 4c d5-59 09 8b 76 36 d2 5a 9b   u...[.L.Y..v6.Z.
+    00b0 - 90 e2 ea 4c bd e5 c4 37-fe 0b 6c 18 d6 4a 9e da   ...L...7..l..J..
+    00c0 - c5 cb 2d 0f 9c 91 1a 9d-cc ea e3 27 cb 31 d2 5f   ..-........'.1._
+    00d0 - c4 0a e1 99 5d a8 4a 35-04 f1 a7 ac 99 44 71 74   ....].J5.....Dqt
+    00e0 - b5 c5 e4 e8 82 d2 0d c5-6c 11 79 c2 92 e0 ba fc   ........l.y.....
+    00f0 - 7c 9d 67 d8 f4 3d 36 ac-d8 d2 45 72 ea 02 88 2e   |.g..=6...Er....
+
+    Start Time: 1767686388
+    Timeout   : 7200 (sec)
+    Verify return code: 21 (unable to verify the first certificate)
+    Extended master secret: no
+    Max Early Data: 0
+---
+read R BLOCK
+---
+Post-Handshake New Session Ticket arrived:
+SSL-Session:
+    Protocol  : TLSv1.3
+    Cipher    : TLS_AES_256_GCM_SHA384
+    Session-ID: DD46246CF2004F948DDE738278ADF5B9E68847E983A3E35B6CF037D3CF2134D4
+    Session-ID-ctx:
+    Resumption PSK: EC4762BFECACF508E4B72897AE974B798A524E2031FA2C9A9C1F1F8A8F1BBC9148D7EBE37C258A0E7EFEACF99859C12F
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    TLS session ticket lifetime hint: 300 (seconds)
+    TLS session ticket:
+    0000 - 2a 78 80 03 bf 8d 1a f2-b9 3c e2 2a 4b 75 52 0f   *x.......<.*KuR.
+    0010 - 29 22 d1 92 98 ec 8c 51-41 f2 3c 52 8d 73 d5 5b   )".....QA.<R.s.[
+    0020 - 9b 84 f3 e4 1c 0a 44 d6-3a 83 a8 06 d4 35 07 44   ......D.:....5.D
+    0030 - 75 88 e3 23 4f 0a 31 db-0f 38 34 0d 62 35 01 13   u..#O.1..84.b5..
+    0040 - 46 63 e4 83 60 ad 85 51-2b 4d d9 f6 3c 98 12 f1   Fc..`..Q+M..<...
+    0050 - 3b 8c 8e 34 96 f9 5e c0-bb f3 97 df 7d 5a 3f 13   ;..4..^.....}Z?.
+    0060 - b2 f4 ab ff 36 dd 63 bd-e6 12 60 7b fc bd ee ba   ....6.c...`{....
+    0070 - d5 f1 ea c9 a8 00 f4 02-72 47 d1 03 cc 92 dc 3d   ........rG.....=
+    0080 - 70 3d f2 d0 8f a3 0d 31-ea 98 12 0b 17 49 dc 18   p=.....1.....I..
+    0090 - d2 c6 07 d7 8d be 70 b3-53 d6 74 4f a0 d4 02 f1   ......p.S.tO....
+    00a0 - 32 2b 81 7f f2 96 85 92-62 04 43 ff 7b 59 5a ac   2+......b.C.{YZ.
+    00b0 - 31 c6 97 f6 7f cf db c2-4e 02 ca 4a 11 d9 af 51   1.......N..J...Q
+    00c0 - cd d5 d6 bb 36 41 29 3e-ca aa d1 8b 69 e1 34 7d   ....6A)>....i.4}
+    00d0 - f9 e0 62 de 45 22 6f b7-93 ed 08 de bc f2 31 a2   ..b.E"o.......1.
+    00e0 - ae 21 c9 bb 60 71 e5 65-60 24 83 74 ca cc 34 0a   .!..`q.e`$.t..4.
+    00f0 - 7d 44 ed ba 97 b1 33 5c-a4 b8 f1 f3 a9 00 07 2e   }D....3\........
+
+    Start Time: 1767686388
+    Timeout   : 7200 (sec)
+    Verify return code: 21 (unable to verify the first certificate)
+    Extended master secret: no
+    Max Early Data: 0
+---
+read R BLOCK
+closed
 ```
 
 We zien dat TLSv1.3 actief is.

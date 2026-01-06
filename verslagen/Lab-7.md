@@ -101,7 +101,7 @@ Dec 29 09:55:01 wazuh-server opensearch-dashboards[730]: {"type":"log","@timesta
 Dec 29 09:55:01 wazuh-server opensearch-dashboards[730]: {"type":"log","@timestamp":"2025-12-29T09:55>
 ```
 
-We kunnen het wazuh dashboard bereiken door in een browser naar het IP-adres van de SIEM server:
+We kunnen het wazuh dashboard bereiken door in een browser naar het IP-adres van de SIEM server, later voegde ik in de DNS ook nog een record toe siem.cybersec.internal die naar dit IP-adres wees.
 
 ![alt text](<img/Schermafbeelding 2025-12-29 111519.png>)
 
