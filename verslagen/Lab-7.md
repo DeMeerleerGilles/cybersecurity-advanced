@@ -148,7 +148,20 @@ Ik recupereerde een windows client van het vak windows server. Ik stopte ook dez
 Ik voegde in de /var/ossec/etc/ossec.conf van de SIEM server de volgende regels toe om file integrity monitoring in te schakelen:
 
 ```xml
- <directories check_all="yes">/home</directories>
+ <!-- File integrity monitoring -->
+  <syscheck>
+    <disabled>no</disabled>
+
+    <!-- Frequency that syscheck is executed default every 12 hours -->
+    <frequency>60</frequency>
+
+    <scan_on_start>yes</scan_on_start>
+
+    <!-- Directories to check  (perform all possible verifications) -->
+    <directories>/etc,/usr/bin,/usr/sbin</directories>
+    <directories>/bin,/sbin,/boot</directories>
+    <directories check_all="yes">/home</directories>
+    <!-- Files/directories to ignore -->
 ```
 
 Hierdoor worden alle bestanden in de home directory van alle gebruikers gemonitord op wijzigingen.
@@ -164,6 +177,10 @@ rm /home/testfile.txt
 Ik had veel problemen om de logs zichtbaar te krijgen in het dashboard, dit kwam doordat mijn VM een schijf had van slechts 20GB en de indexer hierdoor vastliep. Na het vergroten van de schijf naar 50GB werkte alles terug naar behoren.
 
 ![alt text](<img/Schermafbeelding 2025-12-29 172455.png>)
+
+Op de afbeelding is een log te zien waarop het tekstbestand op de companyrouter werd aangepast.
+
+![alt text](<img/Schermafbeelding 2026-01-07 114944.png>)
 
 ## Windows endpoint detection
 
@@ -222,20 +239,36 @@ We zien deze logs nu verschijnen onder threat hunting in het wazuh dashboard:
 
 ![alt text](<img/Schermafbeelding 2025-12-30 103135.png>)
 
-We kunnen logs creëren door een powershell script uit te voeren op de windows client:
+We kunnen logs creëren door niet koosjere commando's uit te voeren in powershell. Bijvoorbeeld:
 
 ```powershell
-PS C:\Users\Administrator> for ($i=0; $i -lt 10; $i++) { Write-Output "This is log entry number $i" }
-This is log entry number 0
-This is log entry number 1
-This is log entry number 2
-This is log entry number 3
-This is log entry number 4
-This is log entry number 5
-This is log entry number 6
-This is log entry number 7
-This is log entry number 8
-This is log entry number 9
+powershell.exe -EncodedCommand V3JpdGUtSG9zdCAiSGFja2VkIGJ5IFN5c21vbiBEZW1vIg==
 ```
+
+Geef dit in de logs:
+
+![alt text](<img/Schermafbeelding 2026-01-07 143122.png>)
+
+![alt text](<img/Schermafbeelding 2026-01-07 143208.png>)
+
+Bij het aanmaken van een executable bestand
+
+```powershell
+PS C:\Tools\Sysmon> New-Item -Path "C:\Users\$env:USERNAME\AppData\Local\Temp\TestViru3s.exe" -ItemType "file" -Value "Dit is een test"
+
+
+    Directory: C:\Users\Administrator\AppData\Local\Temp
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----          1/7/2026   1:33 PM             15 TestViru3s.exe
+```
+
+Krijgen we deze logs:
+
+![alt text](<img/Schermafbeelding 2026-01-07 143552.png>)
+
+![alt text](<img/Schermafbeelding 2026-01-07 143610.png>)
 
 Als we nu kijken in de threat hunting logs in het dashboard zien we deze verschijnen.

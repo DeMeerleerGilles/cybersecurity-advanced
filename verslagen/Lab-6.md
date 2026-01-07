@@ -13,6 +13,8 @@ We zien dat httpd (Apache) draait.
 How is the webserver configured as a reverse proxy? Where is this defined? What config file?
 De reverse proxy is geconfigureerd in de httpd.conf file, deze bevindt zich in /etc/httpd/conf/httpd.conf.
 
+cd /etc/httpd/conf.d/
+
 Wat we hieruit kunnen afleiden:
 
 ```bash
