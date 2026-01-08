@@ -37,7 +37,7 @@ In cybersecurity and virtualization we got to know Wireshark. Most captures were
    Er is heel veel cummunicatie tussen 172.30.128.1O en 172.30.42.2, voor de rest is er een beetje communicatie tussen andere adressen.
 
 3. Take a look at the protocol hierarchy. What are the most "interesting" protocols listed here?
-   Heel veel SSH verkeer, een paar windows gerelateerde protocollen zoals LDAP, kerberos. De rest is allemaal ARP, TCP en UDP.
+   Heel veel SSH verkeer, een paar windows gerelateerde protocollen zoals LDAP, kerberos. De rest is allemaal ARP, TCP en UDP. Ook DNS en pings in het begin.
 
 4. Can you spot an SSH session that got established between 2 machines? List the 2 machines. Who was the SSH server and who was the client? What ports were used? Are these ports TCP or UDP?
    Client: 172.30.128.10
@@ -185,7 +185,6 @@ listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144
 15:24:20.275487 eth3  In  IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 468, win 2003, options [nop,nop,TS val 3421474804 ecr 1348158464], length 0
 15:24:20.275495 eth2  Out IP 172.30.20.123.54104 > 172.30.10.10.http: Flags [.], ack 468, win 2003, options [nop,nop,TS val 3421474804 ecr 1348158464], length 0
 ```
-
 
 Interfaces companyrouter:
 
