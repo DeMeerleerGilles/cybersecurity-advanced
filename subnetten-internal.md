@@ -1,5 +1,7 @@
 # Overzicht van de subnetten
 
+SSH moet werken tussen alle machines over alle subnetten heen. De webserver in de DMZ moet bereikbaar zijn vanaf overal. De wazuh SIEM moet ook alle logs kunnen ontvangen van alle machines. DNS moet werken voor alle servers en clients. IP sec en openvpn moeten ook doorgelaten worden.
+
 | Subnet                 | subnet 1                      | subnet 2                      |
 | ---------------------- | ----------------------------- | ----------------------------- |
 | Netwerk                | 172.30.10.0/24                | 172.30.20.0/24                |

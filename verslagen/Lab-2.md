@@ -245,10 +245,36 @@ Nmap done: 1 IP address (1 host up) scanned in 263.89 seconds
 ```
 Het lukt niet om in te breken op de database server met de gebruikte lijsten.
 
-Ik probeerde ook met hydra:
+Ik probeerde ook met hydra, hierbij kreeg ik echter een ban door mysql:
 
 ```bash
-hydra -l root -P /usr/share/wordlists/rockyou.txt 172.30.20.15 mysql
+└─$ hydra -l root -P /usr/share/wordlists/rockyou.txt 172.30.20.15 mysql
+
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2026-01-08 03:52:01
+[INFO] Reduced number of tasks to 4 (mysql does not like many parallel connections)
+[DATA] max 4 tasks per 1 server, overall 4 tasks, 14344398 login tries (l:1/p:14344398), ~3586100 tries per task
+[DATA] attacking mysql://172.30.20.15:3306/
+[STATUS] 6629.00 tries/min, 6629 tries in 00:01h, 14337769 to do in 36:03h, 4 active
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
+[ERROR] Host '192.168.62.110' is blocked because of many connection errors; unblock with 'mariadb-admin flush-hosts'
 ```
 
 Proberen om te ssh verbinden van de red machine naar een andere machine met vagrant/vagrant:
@@ -326,7 +352,7 @@ De output toont dat de webserver mogelijk risicovolle HTTP-methoden zoals TRACE 
 
 Wat wordt bedoeld met de term attack vector?
 
-Een attack vector is het pad of de methode waarmee een aanvaller toegang kan krijgen tot een systeem of netwerk. Door het netwerk op te splitsen in segmenten en verkeer tussen die zones te beperken, verklein je het aantal mogelijke aanvalspaden.
+Een attack vector is het pad of de methode waarmee een aanvaller toegang kan krijgen tot een systeem of netwerk. Door het netwerk op te splitsen in segmenten en verkeer tussen die zones te beperken, verklein je het aantal mogelijke aanvalspaden. Ook heb je een kleiner broadcast domein, wat de impact van bepaalde aanvallen (zoals ARP spoofing) kan verminderen.
 
 Is er al network segmentation gedaan op het huidige (interne) bedrijfennetwerk?
 
@@ -354,74 +380,104 @@ sudo tee /etc/nftables.conf > /dev/null <<'EOF'
 
 flush ruleset
 
-#
-# Zone definitions 
-#
+# ----------------------------
+# 1. Definities & Variabelen
+# ----------------------------
 define WAN = "eth0"
 define EXTERNAL = "eth1"
 define DMZ_IF = "eth2"
 define INT_IF = "eth3"
 
+# Netwerken
 define fake_internet = 192.168.62.0/24
 define dmz_net = 172.30.10.0/24
 define intranet_net = 172.30.20.0/24
 
-# Specifieke IP's voor strakkere beveiliging
+# Hosts
 define webserver = 172.30.10.10
 define dns_server = 172.30.20.4
+define siem_server = 172.30.20.50
+define db_server = 172.30.20.15
 
 table inet filter {
+    # ----------------------------
+    # 2. Input Chain (Verkeer NAAR de router, dus ook Jumpstation logins)
+    # ----------------------------
     chain input {
         type filter hook input priority 0; policy drop;
 
+        # Accepteer localhost en bestaande connecties
         iif lo accept
         ct state established,related accept
 
-        # ICMP toestaan (handig voor troubleshooting)
+        # ICMP (Ping) naar de router zelf toestaan
         ip protocol icmp accept
 
-        # SSH beheer (beperkt tot Intranet en Kali voor testen)
-        ip saddr { $intranet_net, 192.168.62.110 } tcp dport 22 accept
+        # --- FIX: SSH (22) EN VAGRANT (2222) ---
+        # Dit zorgt dat je erin komt via zowel standaard SSH als Vagrant
+        ip saddr { $fake_internet, $intranet_net, $dmz_net } tcp dport { 22, 2222 } accept
     }
 
+    # ----------------------------
+    # 3. Forward Chain (Verkeer DOOR de router)
+    # ----------------------------
     chain forward {
         type filter hook forward priority 0; policy drop;
 
-        # 1. Toestaan van bestaande verbindingen (Cruciaal!)
+        # A. BASIS & PING
         ct state established,related accept
+        
+        # ICMP (Ping) doorlaten (Zodat je test.sh werkt!)
+        ip protocol icmp accept
 
-        # 2. Intranet -> WAN & External (Internet toegang)
+        # B. SSH DOORVOEREN (Ook hier 2222 voor de zekerheid toegestaan)
+        meta l4proto tcp tcp dport { 22, 2222 } accept
+
+        # C. DNS (Cruciaal voor alles)
+        ip daddr $dns_server udp dport 53 accept
+        ip daddr $dns_server tcp dport 53 accept
+        # DNS Server mag naar buiten
+        ip saddr $dns_server oifname { $WAN, $EXTERNAL } udp dport 53 accept
+        ip saddr $dns_server oifname { $WAN, $EXTERNAL } tcp dport 53 accept
+
+        # D. WEBSERVER (Bereikbaar vanaf overal)
+        ip daddr $webserver tcp dport { 80, 443, 8000, 9200 } accept
+
+        # E. WAZUH SIEM (Logs ontvangen)
+        ip daddr $siem_server tcp dport { 1514, 1515 } accept
+        ip daddr $siem_server udp dport { 1514, 1515 } accept
+
+        # F. VPN PASSTHROUGH
+        udp dport 1194 accept
+        udp dport { 500, 4500 } accept
+        ip protocol esp accept
+
+        # G. UITGAAND VERKEER (Internet toegang)
         iifname $INT_IF oifname { $WAN, $EXTERNAL } accept
-
-        # 3. Intranet -> DMZ (Volledig beheer)
-        iifname $INT_IF oifname $DMZ_IF accept
-
-        # 4. DMZ -> Intranet (Beperk dit! Meestal alleen naar DB of SIEM)
-        # Voor nu conform jouw script (open), maar overweeg dit te beperken:
-        iifname $DMZ_IF oifname $INT_IF accept
-
-        # 5. Fake internet -> DMZ Webserver
-        ip saddr $fake_internet ip daddr $webserver tcp dport { 80, 443, 8000, 9200 } accept
-        ip saddr $fake_internet ip daddr $webserver icmp type echo-request accept
-
-        # 6. Fake internet -> Specifieke DNS server (Poort 53)
-        ip saddr $fake_internet ip daddr $dns_server udp dport 53 accept
-        ip saddr $fake_internet ip daddr $dns_server tcp dport 53 accept
-
-        # 7. DMZ naar buiten (voor updates etc.)
         iifname $DMZ_IF oifname { $WAN, $EXTERNAL } accept
+
+        # H. INTERNE TRAFFIC
+        # Intranet -> DMZ (Volledig toegang)
+        iifname $INT_IF oifname $DMZ_IF accept
+        
+        # DMZ -> Intranet (Beperkt: Webserver -> DB)
+        ip saddr $webserver ip daddr $db_server tcp dport 3306 accept
     }
 
+    # ----------------------------
+    # 4. Output Chain (Verkeer VANUIT de router)
+    # ----------------------------
     chain output {
         type filter hook output priority 0; policy accept;
     }
 }
 
+# ----------------------------
+# 5. NAT
+# ----------------------------
 table ip nat {
     chain postrouting {
         type nat hook postrouting priority 100;
-
-        # Masquerade alles wat naar het internet (WAN/External) gaat
         oifname { $WAN, $EXTERNAL } masquerade
     }
 }
