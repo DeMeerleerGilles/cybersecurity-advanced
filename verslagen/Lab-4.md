@@ -323,10 +323,8 @@ Wat voor type honeypot is honeyup?
 
 Honeyup is een:
 
--   Honeypot network analyzer / honeynet visualizer
--   Ontworpen om netwerkscans te detecteren, vooral ARP-scan, Nmap, DHCP-scans, etc.
+An uploader honeypot designed to look like poor website security.
 
-Het is dus een network-level honeypot die footprinting/scanning zichtbaar maakt.
 
 Wat is het idee achter OpenCanary?
 
@@ -362,7 +360,7 @@ Nadelen:
 -   HTTP(S) verkeer is enorm → veel ruis
 
 -   Veel false positives (bots, scrapers)
-    Aanvallers zien soms te snel dat het een honeypot is
+-   aanvallers zien soms te snel dat het een honeypot is
 -   HTTPS vergt certificaatmanagement
 
 Conclusie:
@@ -394,3 +392,4 @@ Alles wat binnenkomt via een form POST kan je gewoon dumpen naar:
 - Elasticsearch/Grafana Loki
 
 Zo heb je een volledig overzicht van alle gebruikte commando’s door aanvallers.
+

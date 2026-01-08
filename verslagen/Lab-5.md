@@ -280,6 +280,18 @@ Tue 2025-12-23 09:51:12 UTC 4min 54s left Tue 2025-12-23 09:46:12 UTC 5s ago    
       borg-backup.service
 ```
 
+We kunnen de logs bekijken met: 
+
+```bash
+sudo journalctl -u borg-backup.service -n 50 --no-pager
+```
+
+De volgende timer bekijken we met: 
+
+```bash
+systemctl list-timers borg-backup.timer
+```
+
 Borg compact verwijdert onnodige data uit de repository om ruimte te besparen.
 
 A brain teaser: can I use tools like borg to backup an active database? Why (not)? Read https://borgbackup.readthedocs.io/en/stable/quickstart.html#important-note-about-files-changing-during-the-backup-process for more information. Should I take any extra measures to do this safely?
