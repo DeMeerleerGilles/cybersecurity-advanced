@@ -240,6 +240,7 @@ We zien deze logs nu verschijnen onder threat hunting in het wazuh dashboard:
 ![alt text](<img/Schermafbeelding 2025-12-30 103135.png>)
 
 We kunnen logs creëren door niet koosjere commando's uit te voeren in powershell. Bijvoorbeeld:
+Dit commando voert een encoded powershell command uit dat "Hacked by Sysmon Demo" schrijft naar de host.
 
 ```powershell
 powershell.exe -EncodedCommand V3JpdGUtSG9zdCAiSGFja2VkIGJ5IFN5c21vbiBEZW1vIg==

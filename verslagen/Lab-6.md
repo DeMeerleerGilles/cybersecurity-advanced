@@ -44,7 +44,6 @@ De services zijn als volgt:
 | insecurewebapp.service | active | Java app (start script)  | 9200                | Java (app.jar)     |
 | flaskapp.service       | failed | Flask app (start script) | 8000                | Python/Flask       |
 
-
 De cmd service draait op poort 8000 en is geschreven in Python met het Flask framework. De /services service draait op poort 9200 en is geschreven in Java.
 
 De bestanden voor de cmd service bevinden zich in /opt/flaskapp/ en voor de services service in /opt/insecurewebapp/.
@@ -258,6 +257,8 @@ Om het verkeer met wireshark te bekijken hebben we nood aan de private key van d
 
 
 ![alt text](<img/Schermafbeelding 2025-12-28 143408.png>)
+
+cd /etc/httpd/conf.d/
 
 ## HTTPS TLS 1.3
 
@@ -521,8 +522,6 @@ firefox &
 ```
 
 We bezoeken de website:
-
-Afbeelding van de website met HTTPS
 
 We sluiten de browser en stellen het bestand met de sessiesleutels veilig:
 
