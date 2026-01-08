@@ -70,7 +70,7 @@ Host kali
 # === ISP router (direct) ===
 Host isprouter
     HostName 192.168.62.254
-    User admin        # pas aan als gebruiker anders is (root, admin, etc.)
+    User vagrant
     IdentityFile ~/.ssh/id_rsa
 
 # === Shortcut: directe sessie naar companyrouter ===
@@ -90,8 +90,7 @@ ssh companyrouter
 ...
 ```
 
-Indien we dit nog extra veilig willen maken kunnen we een nieuwe gebruiker installen naast de vagrant gebruiker. Ik schakelde ook de wachtwoord authenticatie uit in /etc/ssh/sshd_config door PasswordAuthentication op no te zetten.
-
+Indien we dit nog extra veilig willen maken kunnen we een nieuwe gebruiker instellen naast de vagrant gebruiker. Ik schakelde ook de wachtwoord authenticatie uit in /etc/ssh/sshd_config door PasswordAuthentication op no te zetten.
 
 ### SSH port forwarding:
 
@@ -101,6 +100,8 @@ Webserver bekijken op je laptop Je stuurt poort 8080 op je laptop door naar poor
 # Formule: ssh -L [lokale_poort]:[doel_ip]:[doel_poort] [bastion_host]
 ssh -L 8080:172.30.10.10:80 companyrouter
 ```
+
+Als we nu in onze browser naar localhost:8080 gaan, krijgen we de webpagina van de webserver te zien. We krijgen wel een error doordat er geen DNS server is ingesteld op mijn laptop die de site kent.
 
 Database bereikbaar maken op de router Iemand op het 'fake internet' kan dan verbinden met de router op poort 3306 en wordt doorgezet naar de DB.
 
