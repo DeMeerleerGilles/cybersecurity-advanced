@@ -43,7 +43,7 @@ icmp || esp
 en nu pingen we van de remote-employee naar de webserver:
 
 ```bash
-ping 172.30.10.10 
+[vagrant@remote-employee ~]$ ping 172.30.10.10
 ```
 
 ![alt text](<img/Schermafbeelding 2025-12-30 152947.png>)
@@ -59,14 +59,14 @@ Hierna maakte ik een bestand aan op de homerouter om het script uit de opgave in
 sudo ip xfrm state flush
 sudo ip xfrm policy flush
 
-# 2. Variabelen (Zorg dat deze exact hetzelfde zijn op beide routers)
+# 2. Variabelen 
 SPI_HOME_TO_COMP=0x007
 KEY_HOME_TO_COMP=0xFEDCBA9876543210FEDCBA9876543210
 
 SPI_COMP_TO_HOME=0x008
 KEY_COMP_TO_HOME=0x8c51dbe8f193bddddf5d91efd3f7b9fb
 
-# 3. States (SA) - Hoe we versleutelen en ontsleutelen
+# 3. States (SA) - De sleutels en parameters voor de tunnel
 # Uitgaand naar Company
 sudo ip xfrm state add src 192.168.62.42 dst 192.168.62.253 proto esp spi $SPI_HOME_TO_COMP mode tunnel enc aes $KEY_HOME_TO_COMP
 # Inkomend van Company
@@ -91,7 +91,7 @@ Ik paste dit script aan om het ook op de companyrouter te kunnen uitvoeren:
 sudo ip xfrm state flush
 sudo ip xfrm policy flush
 
-# 2. Variabelen (Identiek aan Homerouter)
+# 2. Variabelen
 SPI_HOME_TO_COMP=0x007
 KEY_HOME_TO_COMP=0xFEDCBA9876543210FEDCBA9876543210
 
@@ -145,7 +145,7 @@ ip saddr 172.10.10.0/24 ip daddr { $dmz_net, $intranet_net } accept
 
 ## Decryption 
 
-Decryption¶
+Decryption
 
 You are using static keys, opposed to what IKE would organize for you. But knowing the key, and the SPI: can you decrypt the traffic you have captured in Wireshark?
 

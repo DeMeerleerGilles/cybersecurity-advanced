@@ -63,6 +63,13 @@ Hierna maakte ik de Diffie-Hellman parameters aan zodat de sleutels veilig uitge
 /usr/share/easy-rsa/3/easyrsa gen-dh
 ```
 
+We kunnen de gemaakte certificaten en sleutels terugvinden in de pki map:
+
+```bash
+[vagrant@companyrouter ~]$ ls pki
+ca.crt  ca.key  dh.pem  issued  private  reqs  serial
+```
+
 ## Server configureren
 
 Ik kopieerde het voorbeeldconfiguratiebastand naar de /etc/openvpn map:
@@ -229,10 +236,8 @@ sudo openvpn client.conf
 
 Voor de authenticatie vulde ik de volgende gegevens in:
 
-
 Username: vagrant
 Password: vagrant
-
 
 De VPN client is nu gestart. Ik opende een nieuwe terminal op de remote employee. Als ik nu mijn IP adres opvroeg zag ik dat ik een IP adres uit het VPN subnet had gekregen:
 
@@ -243,6 +248,12 @@ De VPN client is nu gestart. Ik opende een nieuwe terminal op de remote employee
        valid_lft forever preferred_lft forever
     inet6 fe80::e8d4:2af5:8cbf:1ab5/64 scope link stable-privacy
        valid_lft forever preferred_lft forever
+```
+
+We starten ettercap om het verkeer te kunnen monitoren:
+
+```bash
+sudo ettercap -Tq -i eth0 -M arp:remote /192.168.62.42// /192.168.62.253//
 ```
 
 Als we nu een ping doen naar de dns server in het interne netwerk zien we dat de VPN verbinding werkt:
